@@ -1,0 +1,24 @@
+CREATE TABLE Books(
+  Isbn      TEXT PRIMARY KEY,
+  Title     TEXT,
+  Author    TEXT,
+  Category  TEXT,
+  Year      TEXT,
+  Thumbnail TEXT
+);
+
+CREATE TABLE ActionLogs(
+  Isbn      TEXT,
+  Timestamp TEXT,
+  Action    INTEGER,
+  UserId    INTEGER  /* Users.Id below */
+);
+
+CREATE UNIQUE INDEX LogsByTimestamp
+ON ActionLogs(Isbn, Timestamp DESC);
+
+CREATE TABLE Users(
+  Id     INTEGER PRIMARY KEY,
+  Name   TEXT,
+  Email  TEXT
+);
