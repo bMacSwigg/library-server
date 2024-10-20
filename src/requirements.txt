@@ -1,4 +1,5 @@
+gunicorn
 Flask
 flask-cors
+firebase_admin
 requests
-gunicorn
