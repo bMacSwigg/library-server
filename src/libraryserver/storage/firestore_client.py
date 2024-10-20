@@ -15,8 +15,12 @@ class Database:
         self.users_ref = cli.collection('users')
         self.logger = logging.getLogger(__name__)
 
-    def getBook(self, isbn: str) -> DocumentSnapshot:
-        return self.books_ref.where(filter=FieldFilter("isbn", "==", isbn)).get()[0]
+    def getBook(self, isbn: str) -> DocumentSnapshot|None:
+        books = self.books_ref.where(filter=FieldFilter("isbn", "==", isbn)).get()
+        if len(books) == 0:
+            return None
+        else:
+            return books[0]
 
     def putBook(self, isbn, title, author, cat, year, img):
         book = self.books_ref.document()

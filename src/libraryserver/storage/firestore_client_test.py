@@ -3,7 +3,6 @@ import unittest
 from datetime import datetime, UTC
 from firebase_admin import credentials, firestore, initialize_app
 import requests
-import time
 
 from libraryserver.api.models import Action
 from libraryserver.storage.firestore_client import Database
@@ -40,6 +39,10 @@ class TestDatabase(BaseTestCase):
         self.assertEqual(res['category'], 'Non-fiction')
         self.assertEqual(res['year'], '1998')
         self.assertEqual(res['img'], 'url')
+
+    def test_book_getNotFound(self):
+        res = self.db.getBook('does-not-exist')
+        self.assertIsNone(res)
 
     def test_book_list(self):
         self.db.putBook('isbn1', 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
@@ -139,7 +142,6 @@ class TestDatabase(BaseTestCase):
 
     def test_logs_listByUser(self):
         self.db.putLog('isbn1', Action.CHECKOUT, 1234)
-        time.sleep(1)  # Hack to keep the timestamps from colliding
         self.db.putLog('isbn2', Action.RETURN, 1234)
         self.db.putLog('isbn3', Action.CHECKOUT, 5678)
 
