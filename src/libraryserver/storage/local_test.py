@@ -1,30 +1,35 @@
+from firebase_admin import credentials, firestore, initialize_app
 import os
+import requests
 import unittest
-import time
 
 from libraryserver.api.errors import InvalidStateException, NotFoundException
 from libraryserver.api.models import Book, User, Action
 from libraryserver.constants import MIN_USER_ID, MAX_USER_ID
 from libraryserver.notifs.mailgun_client import FakeEmail
-from libraryserver.storage.db import Database
+from libraryserver.storage.firestore_client import Database
 from libraryserver.storage.local import LocalBookService, LocalUserService
 from libraryserver.storage.testbase import BaseTestCase
 
-TEST_DATABASE = ':memory:'
+LOCAL_EMULATOR = "localhost:8287"
+
+# TODO: maybe start emulator here?
+os.environ["FIRESTORE_EMULATOR_HOST"] = LOCAL_EMULATOR
+cred = credentials.Certificate('run-web-efd188ab2632.json')
+initialize_app(cred, {"projectId": "demo-project"})
 
 class TestBookService(BaseTestCase):
 
     def setUp(self):
-        self.db = Database(TEST_DATABASE)
-        schema_path = os.path.join(os.path.dirname(__file__), 'books.schema')
-        with open(schema_path, 'r') as file:
-            schema = file.read()
-            self.db.con.cursor().executescript(schema)
-        self.books = LocalBookService()
-        self.books.db = self.db
+        del_url = (
+            "http://%s/emulator/v1/projects/demo-project/databases/(default)/documents" %
+            LOCAL_EMULATOR
+        )
+        requests.delete(del_url)
+        self.db = Database(firestore.client())
+        self.books = LocalBookService(self.db)
         self.books.email = FakeEmail()
-        self.users = LocalUserService()
-        self.users.db = self.db
+        self.users = LocalUserService(self.db)
 
     def test_getBook_exists(self):
         self.db.putBook('isbn1', 'title', 'author', 'cat', 'year', 'img')
@@ -87,6 +92,7 @@ class TestBookService(BaseTestCase):
         self.db.putBook('isbn2', 'Looking For Alaska', 'John Green', 'Fiction', '2005', 'url')
 
         books = self.books.listBooks()
+        books.sort(key=lambda b: b.isbn)
 
         self.assertEqual(books[0].isbn, 'isbn1')
         self.assertEqual(books[0].title, 'Babel')
@@ -107,10 +113,10 @@ class TestBookService(BaseTestCase):
         self.db.putBook('isbn2', '', '', '', '', '')
         self.db.putLog('isbn1', Action.CREATE)
         self.db.putLog('isbn2', Action.CREATE)
-        time.sleep(1)
         self.db.putLog('isbn1', Action.CHECKOUT, 1234)
 
         books = self.books.listBooks()
+        books.sort(key=lambda b: b.isbn)
 
         self.assertEqual(books[0].isbn, 'isbn1')
         self.assertEqual(books[0].is_out, True)
@@ -168,7 +174,6 @@ class TestBookService(BaseTestCase):
         self.books.createBook(book)
         user = User(1234, 'user', 'user@example.com')
         self.db.putUser(user.user_id, user.name, user.email)
-        time.sleep(1)
         self.books.checkoutBook('isbn1', user)
 
         res = self.books.getBook('isbn1')
@@ -182,7 +187,6 @@ class TestBookService(BaseTestCase):
         self.books.createBook(book)
         user = User(1234, 'user', 'user@example.com')
         self.db.putUser(user.user_id, user.name, user.email)
-        time.sleep(1)
         self.books.checkoutBook('isbn1', user)
 
         with self.assertRaises(InvalidStateException):
@@ -197,9 +201,7 @@ class TestBookService(BaseTestCase):
         self.books.createBook(book)
         user = User(1234, 'user', 'user@example.com')
         self.db.putUser(user.user_id, user.name, user.email)
-        time.sleep(1)
         self.books.checkoutBook('isbn1', user)
-        time.sleep(1)
         self.books.returnBook('isbn1')
 
         res = self.books.getBook('isbn1')
@@ -208,9 +210,9 @@ class TestBookService(BaseTestCase):
         self.assertEqual(res.is_out, False)
         self.assertEqual(res.checkout_user, '')
         self.assertEqual(res.checkout_time, '')
-        self.assertAboutNow(log[1])
-        self.assertEqual(log[2], Action.RETURN.value)
-        self.assertEqual(log[3], 1234)
+        self.assertAboutNow(log.get("timestamp"))
+        self.assertEqual(log.get("action"), Action.RETURN.value)
+        self.assertEqual(log.get("user_id"), 1234)
 
     def test_returnBook_notOut(self):
         book = Book('isbn1', '', '', '', '', '')
@@ -228,9 +230,7 @@ class TestBookService(BaseTestCase):
         self.books.createBook(Book('isbn2', '', '', '', '', ''))
         user = User(1234, 'user', 'user@example.com')
         self.db.putUser(user.user_id, user.name, user.email)
-        time.sleep(1)
         self.books.checkoutBook('isbn1', user)
-        time.sleep(1)
         self.books.returnBook('isbn1')
         self.books.checkoutBook('isbn2', user)
 
@@ -253,9 +253,7 @@ class TestBookService(BaseTestCase):
         self.books.createBook(Book('isbn2', '', '', '', '', ''))
         user = self.users.createUser('user', 'user@example.com')
         other = self.users.createUser('other', 'other@example.com')
-        time.sleep(1)
         self.books.checkoutBook('isbn1', user)
-        time.sleep(1)
         self.books.returnBook('isbn1')
         self.books.checkoutBook('isbn2', other)
 
@@ -276,13 +274,13 @@ class TestBookService(BaseTestCase):
 class TestUserService(BaseTestCase):
 
     def setUp(self):
-        self.db = Database(TEST_DATABASE)
-        schema_path = os.path.join(os.path.dirname(__file__), 'books.schema')
-        with open(schema_path, 'r') as file:
-            schema = file.read()
-            self.db.con.cursor().executescript(schema)
-        self.users = LocalUserService()
-        self.users.db = self.db
+        del_url = (
+            "http://%s/emulator/v1/projects/demo-project/databases/(default)/documents" %
+            LOCAL_EMULATOR
+        )
+        requests.delete(del_url)
+        self.db = Database(firestore.client())
+        self.users = LocalUserService(self.db)
 
     def test_getUser(self):
         self.db.putUser(1234, 'Brian', 'me@example.com')
