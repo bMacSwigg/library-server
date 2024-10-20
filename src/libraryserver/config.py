@@ -24,8 +24,8 @@ class AppConfig:
     def owner(self):
         return self.config['Owner']
 
-    def db_file(self):
-        paths = self.config['DbPath'].split(',')
+    def firestore_apikey_file(self):
+        paths = self.config['FirestoreApiKeyPath'].split(',')
         return os.path.join(self.root, *paths)
 
     def mailgun_apikey_file(self):
