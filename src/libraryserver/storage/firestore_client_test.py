@@ -10,14 +10,12 @@ from libraryserver.storage.testbase import BaseTestCase
 
 LOCAL_EMULATOR = "localhost:8287"
 
-class TestDatabase(BaseTestCase):
+# TODO: maybe start emulator here?
+os.environ["FIRESTORE_EMULATOR_HOST"] = LOCAL_EMULATOR
+cred = credentials.Certificate('run-web-efd188ab2632.json')
+initialize_app(cred, {"projectId": "demo-project"})
 
-    @classmethod
-    def setUpClass(cls):
-        # TODO: maybe start emulator here?
-        os.environ["FIRESTORE_EMULATOR_HOST"] = LOCAL_EMULATOR
-        cred = credentials.Certificate('run-web-efd188ab2632.json')
-        initialize_app(cred, {"projectId": "demo-project"})
+class TestDatabase(BaseTestCase):
 
     def setUp(self):
         self.db = Database(firestore.client())
