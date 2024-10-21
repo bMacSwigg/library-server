@@ -17,10 +17,10 @@ app = Flask(__name__)
 # Initialize Firestore DB
 if APP_CONFIG.firestore_apikey_file():
     cred = credentials.Certificate(APP_CONFIG.firestore_apikey_file())
+    initialize_app(cred)
 else:
     # use application default credentials
-    cred = credentials.Certificate()
-initialize_app(cred)
+    initialize_app()
 db = Database(firestore.client())
 
 # Books API

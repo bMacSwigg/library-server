@@ -19,10 +19,8 @@ class AppConfig:
     def _gcp(self):
         try:
             requests.get("http://metadata.google.internal/computeMetadata/v1/instance/tags")
-            print('_gcp True')
             return True
         except Exception as e:
-            print('_gcp False: %s, %s' % (type(e), e))
             return False
 
     def owner(self):
