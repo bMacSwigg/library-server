@@ -8,26 +8,26 @@ from libraryserver.api.models import Action
 from libraryserver.storage.firestore_client import Database
 from libraryserver.storage.testbase import BaseTestCase
 
+LOCAL_EMULATOR = "localhost:8287"
 
 class TestDatabase(BaseTestCase):
-
-    LOCAL_EMULATOR = "localhost:8287"
-    LOGGER_NAME = 'libraryserver.storage.db'
 
     @classmethod
     def setUpClass(cls):
         # TODO: maybe start emulator here?
-        os.environ["FIRESTORE_EMULATOR_HOST"] = cls.LOCAL_EMULATOR
+        os.environ["FIRESTORE_EMULATOR_HOST"] = LOCAL_EMULATOR
         cred = credentials.Certificate('run-web-efd188ab2632.json')
         initialize_app(cred, {"projectId": "demo-project"})
 
     def setUp(self):
+        self.db = Database(firestore.client())
+
+    def tearDown(self):
         del_url = (
             "http://%s/emulator/v1/projects/demo-project/databases/(default)/documents" %
-            self.LOCAL_EMULATOR
+            LOCAL_EMULATOR
         )
         requests.delete(del_url)
-        self.db = Database(firestore.client())
 
     def test_book_putAndGet(self):
         self.db.putBook('some-isbn', 'Really Cool Book', 'Smart Person', 'Non-fiction', '1998', 'url')

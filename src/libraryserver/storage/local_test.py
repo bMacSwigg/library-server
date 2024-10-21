@@ -21,15 +21,17 @@ initialize_app(cred, {"projectId": "demo-project"})
 class TestBookService(BaseTestCase):
 
     def setUp(self):
+        self.db = Database(firestore.client())
+        self.books = LocalBookService(self.db)
+        self.books.email = FakeEmail()
+        self.users = LocalUserService(self.db)
+
+    def tearDown(self):
         del_url = (
             "http://%s/emulator/v1/projects/demo-project/databases/(default)/documents" %
             LOCAL_EMULATOR
         )
         requests.delete(del_url)
-        self.db = Database(firestore.client())
-        self.books = LocalBookService(self.db)
-        self.books.email = FakeEmail()
-        self.users = LocalUserService(self.db)
 
     def test_getBook_exists(self):
         self.db.putBook('isbn1', 'title', 'author', 'cat', 'year', 'img')
@@ -274,13 +276,15 @@ class TestBookService(BaseTestCase):
 class TestUserService(BaseTestCase):
 
     def setUp(self):
+        self.db = Database(firestore.client())
+        self.users = LocalUserService(self.db)
+
+    def tearDown(self):
         del_url = (
             "http://%s/emulator/v1/projects/demo-project/databases/(default)/documents" %
             LOCAL_EMULATOR
         )
         requests.delete(del_url)
-        self.db = Database(firestore.client())
-        self.users = LocalUserService(self.db)
 
     def test_getUser(self):
         self.db.putUser(1234, 'Brian', 'me@example.com')
