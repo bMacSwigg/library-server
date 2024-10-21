@@ -25,6 +25,8 @@ class AppConfig:
         return self.config['Owner']
 
     def firestore_apikey_file(self):
+        if not 'FirestoreApiKeyPath' in self.config:
+            return None
         paths = self.config['FirestoreApiKeyPath'].split(',')
         return os.path.join(self.root, *paths)
 

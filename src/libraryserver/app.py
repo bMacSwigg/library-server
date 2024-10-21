@@ -15,7 +15,11 @@ from libraryserver.storage.firestore_client import Database
 app = Flask(__name__)
 
 # Initialize Firestore DB
-cred = credentials.Certificate(APP_CONFIG.firestore_apikey_file())
+if APP_CONFIG.firestore_apikey_file():
+    cred = credentials.Certificate(APP_CONFIG.firestore_apikey_file())
+else:
+    # use application default credentials
+    cred = credentials.Certificate()
 initialize_app(cred)
 db = Database(firestore.client())
 
