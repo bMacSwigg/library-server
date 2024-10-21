@@ -1,40 +1,30 @@
+from firebase_admin import credentials, firestore, initialize_app
 import json
 import os
-import time
+import requests
 import unittest
 
-from libraryserver.storage.db import Database
-from libraryserver.storage.db import __file__ as schema_root
-from libraryserver.config import APP_CONFIG
-from libraryserver.app import app
+# must be done before project imports
+# TODO: maybe start emulator here?
+LOCAL_EMULATOR = "localhost:8287"
+os.environ["FIRESTORE_EMULATOR_HOST"] = LOCAL_EMULATOR
 
-# sqlite doesn't seem to do a good job of wiping in-memory DBs
-DB_NAME = __name__ + str(int(time.time()))
-DB_FILE = "file:%s?mode=memory&cache=shared" % DB_NAME
-print("using DB file '%s'" % DB_FILE)
+from libraryserver.storage.firestore_client import Database
+from libraryserver.app import app
 
 class TestApp(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.client = app.test_client()
-        APP_CONFIG.db_file = lambda: DB_FILE
-        cls.db = Database(APP_CONFIG.db_file())
-        schema_path = os.path.join(os.path.dirname(schema_root), 'books.schema')
-        with open(schema_path, 'r') as file:
-            cls.schema = file.read()
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.db.close()
-
-    def setUp(self):
-        self.db.con.cursor().executescript(self.schema)
+        cls.db = Database(firestore.client())
 
     def tearDown(self):
-        self.db.con.cursor().execute('DROP TABLE Books')
-        self.db.con.cursor().execute('DROP TABLE Users')
-        self.db.con.cursor().execute('DROP TABLE ActionLogs')
+        del_url = (
+            "http://%s/emulator/v1/projects/run-web/databases/(default)/documents" %
+            LOCAL_EMULATOR
+        )
+        requests.delete(del_url)
 
     # Books API
     def test_getBook_exists(self):
@@ -78,7 +68,6 @@ class TestApp(unittest.TestCase):
         self.db.putUser(1111, 'other', 'other-email')
 
         self.client.post("/books/1234/checkout", json={'user_id': 9999})
-        time.sleep(1)
         self.client.post("/books/1234/return")
         self.client.post("/books/5678/checkout", json={'user_id': 1111})
 

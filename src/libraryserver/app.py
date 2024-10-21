@@ -1,15 +1,23 @@
 from dataclasses import asdict
 import datetime
 from flask import Flask, request, jsonify
+from firebase_admin import credentials, firestore, initialize_app
 import logging
 import os
 
 from libraryserver.api.errors import InvalidStateException, NotFoundException
 from libraryserver.api.models import Book
+from libraryserver.config import APP_CONFIG
 from libraryserver.storage.local import LocalBookService, LocalUserService
+from libraryserver.storage.firestore_client import Database
 
 # Initialize Flask app
 app = Flask(__name__)
+
+# Initialize Firestore DB
+cred = credentials.Certificate(APP_CONFIG.firestore_apikey_file())
+initialize_app(cred)
+db = Database(firestore.client())
 
 # Books API
 @app.route('/books/<book_id>', methods=['GET'])
@@ -18,7 +26,7 @@ def getBook(book_id):
         getBook() : Retrieve book by ID (currently, ISBN)
     """
     try:
-        book = LocalBookService().getBook(book_id)
+        book = LocalBookService(db).getBook(book_id)
     except NotFoundException:
         return "Book with ID '%s' not found" % book_id, 404
     else:
@@ -37,12 +45,12 @@ def listBooks():
 
     if 'is_out' in request.args:
         is_out = bool(int(request.args['is_out']))
-        books = LocalBookService().listBooksByStatus(is_out)
+        books = LocalBookService(db).listBooksByStatus(is_out)
     elif 'query' in request.args:
         q = request.args['query']
-        books = LocalBookService().listBooks(q)
+        books = LocalBookService(db).listBooks(q)
     else:
-        books = LocalBookService().listBooks()
+        books = LocalBookService(db).listBooks()
 
     return jsonify(list(map(asdict, books))), 200
 
@@ -58,7 +66,7 @@ def createBook():
     except KeyError:
         return "Missing property", 400
     else:
-        LocalBookService().createBook(book)
+        LocalBookService(db).createBook(book)
         return "Book created", 200
 
 @app.route('/books/<book_id>/checkout', methods=['POST'])
@@ -72,10 +80,10 @@ def checkoutBook(book_id):
 
     user_id = request.json['user_id']
     # TODO: deal with this not being a real user ID
-    user = LocalUserService().getUser(user_id)
+    user = LocalUserService(db).getUser(user_id)
 
     try:
-        LocalBookService().checkoutBook(book_id, user)
+        LocalBookService(db).checkoutBook(book_id, user)
     except InvalidStateException:
         return "Book with ISBN %s already out" % book_id, 400
     else:
@@ -88,7 +96,7 @@ def returnBook(book_id):
         Book must be currently checked out.
     """
     try:
-        LocalBookService().returnBook(book_id)
+        LocalBookService(db).returnBook(book_id)
     except InvalidStateException:
         return "Book with ISBN %s not checked out" % book_id, 400
     else:
@@ -100,7 +108,7 @@ def listBookCheckoutHistory(book_id):
         listBookCheckoutHistory() : List the CHECKOUT and RETURN log events
         for this book. Ordered from earliest to latest.
     """
-    logs = LocalBookService().listBookCheckoutHistory(book_id)
+    logs = LocalBookService(db).listBookCheckoutHistory(book_id)
     return jsonify(list(map(asdict, logs))), 200
 
 # Users API
@@ -109,7 +117,7 @@ def getUser(user_id):
     """
         getUser() : Retrieve user by ID
     """
-    user = LocalUserService().getUser(user_id)
+    user = LocalUserService(db).getUser(user_id)
     return jsonify(user), 200
 
 @app.route('/users', methods=['GET'])
@@ -117,7 +125,7 @@ def listUsers():
     """
         listUsers() : List all users.
     """
-    users = LocalUserService().listUsers()
+    users = LocalUserService(db).listUsers()
 
     return jsonify(list(map(asdict, users))), 200
 
@@ -133,7 +141,7 @@ def createUser():
     except KeyError:
         return "Missing property", 400
     else:
-        user = LocalUserService().createUser(name, email)
+        user = LocalUserService(db).createUser(name, email)
         return jsonify(user), 200
 
 @app.route('/users/<int:user_id>/history', methods=['GET'])
@@ -142,7 +150,7 @@ def listUserCheckoutHistory(user_id):
         listUserCheckoutHistory() : List the CHECKOUT and RETURN log events
         for this user. Ordered from earliest to latest.
     """
-    logs = LocalBookService().listUserCheckoutHistory(user_id)
+    logs = LocalBookService(db).listUserCheckoutHistory(user_id)
     return jsonify(list(map(asdict, logs))), 200
 
 
