@@ -1,25 +1,27 @@
 import configparser
 import os
+import requests
 import sys
 
 
 class AppConfig:
 
     def __init__(self, override_prod=False):
-        if getattr(sys, 'frozen', False) or override_prod:
+        if override_prod or self._gcp():
             config_set = 'prod'
-            # for files that live alongside the executable
-            self.root = os.path.dirname(sys.executable)
-            # for data files bundled into the executable
-            self.tmp_root = sys._MEIPASS
         else:
             config_set = 'dev'
-            # in development, these are the same
-            self.root = os.path.dirname(__file__)
-            self.tmp_root = self.root
+        self.root = os.path.dirname(__file__)
         config_base = configparser.ConfigParser()
-        config_base.read(os.path.join(self.tmp_root, 'config.ini'))
+        config_base.read(os.path.join(self.root, 'config.ini'))
         self.config = config_base[config_set]
+
+    def _gcp(self):
+        try:
+            requests.get("http://metadata.google.internal/computeMetadata/v1/instance/tags")
+            return True
+        except Exception:
+            return False
 
     def owner(self):
         return self.config['Owner']

@@ -7,10 +7,6 @@ from libraryserver.config import AppConfig
 
 class TestConfig(unittest.TestCase):
 
-    def setUp(self):
-        # so it can find the config for prod versions
-        sys._MEIPASS = os.path.normpath(os.path.dirname(__file__))
-
     def test_owner_dev(self):
         ac = AppConfig()
         self.assertEqual(ac.owner(), 'Brian')
@@ -19,16 +15,14 @@ class TestConfig(unittest.TestCase):
         ac = AppConfig(override_prod=True)
         self.assertEqual(ac.owner(), 'Brian')
 
-    def test_dbfile_dev(self):
+    def test_firestorekey_dev(self):
         ac = AppConfig()
-        expected_subpath = os.path.normpath('library-server/src/libraryserver/storage/books.db')
-        self.assertIn(expected_subpath, ac.db_file())
+        expected_subpath = os.path.normpath('library-server/src/libraryserver/storage/run-web-efd188ab2632.json')
+        self.assertIn(expected_subpath, ac.firestore_apikey_file())
 
-    def test_dbfile_prod(self):
+    def test_firestorekey_prod(self):
         ac = AppConfig(override_prod=True)
-        # sys.executable root path will be the Python exe
-        self.assertIn('books.db', ac.db_file())
-        self.assertNotIn('backend', ac.db_file())
+        self.assertIsNone(ac.firestore_apikey_file())
 
     def test_mailgunkey_dev(self):
         ac = AppConfig()
