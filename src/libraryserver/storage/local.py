@@ -72,7 +72,7 @@ class LocalBookService(BookService):
 
     def checkoutBook(self, isbn: str, user: User):
         prev_log = self.db.getLatestLog(isbn)
-        if prev_log.get("action") == Action.CHECKOUT.value:
+        if prev_log and prev_log.get("action") == Action.CHECKOUT.value:
             raise InvalidStateException('Book with ISBN %s already out' % isbn)
 
         self.db.putLog(isbn, Action.CHECKOUT, user.user_id)
@@ -82,7 +82,7 @@ class LocalBookService(BookService):
 
     def returnBook(self, isbn: str):
         checkout_log = self.db.getLatestLog(isbn)
-        if checkout_log.get("action") != Action.CHECKOUT.value:
+        if not checkout_log or checkout_log.get("action") != Action.CHECKOUT.value:
             raise InvalidStateException('Book with ISBN %s is not out' % isbn)
 
         user_id = checkout_log.get("user_id")
