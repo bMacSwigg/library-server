@@ -29,10 +29,11 @@ class TestDatabase(BaseTestCase):
         requests.delete(del_url)
 
     def test_book_putAndGet(self):
-        self.db.putBook('some-isbn', 'Really Cool Book', 'Smart Person', 'Non-fiction', '1998', 'url')
+        self.db.putBook('some-isbn', 1, 'Really Cool Book', 'Smart Person', 'Non-fiction', '1998', 'url')
         res = self.db.getBook('some-isbn').to_dict()
 
         self.assertEqual(res['isbn'], 'some-isbn')
+        self.assertEqual(res['owner_id'], 1)
         self.assertEqual(res['title'], 'Really Cool Book')
         self.assertEqual(res['author'], 'Smart Person')
         self.assertEqual(res['category'], 'Non-fiction')
@@ -44,8 +45,8 @@ class TestDatabase(BaseTestCase):
         self.assertIsNone(res)
 
     def test_book_list(self):
-        self.db.putBook('isbn1', 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
-        self.db.putBook('isbn2', 'Looking for Alaska', 'John Green', 'Fiction', '2005', 'url')
+        self.db.putBook('isbn1', 1, 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
+        self.db.putBook('isbn2', 2, 'Looking for Alaska', 'John Green', 'Fiction', '2005', 'url')
 
         res = self.db.listBooks()
 
@@ -53,12 +54,14 @@ class TestDatabase(BaseTestCase):
         self.assertQueryDataMatches(
             res,
             [{"isbn": "isbn1",
+              "owner_id": 1,
               "title": "Babel",
               "author": "R.F. Kuang",
               "category": "Fiction",
               "year": "2022",
               "img": "url"},
              {"isbn": "isbn2",
+              "owner_id": 2,
               "title": "Looking for Alaska",
               "author": "John Green",
               "category": "Fiction",
@@ -66,11 +69,12 @@ class TestDatabase(BaseTestCase):
               "img": "url"}])
 
     def test_book_listWithSearch(self):
-        self.db.putBook('isbn1', 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
-        self.db.putBook('isbn2', 'Looking for Alaska', 'John Green', 'Fiction', '2005', 'url')
+        self.db.putBook('isbn1', 1, 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
+        self.db.putBook('isbn2', 2, 'Looking for Alaska', 'John Green', 'Fiction', '2005', 'url')
 
         babel_dict = {
             "isbn": "isbn1",
+            "owner_id": 1,
             "title": "Babel",
             "author": "R.F. Kuang",
             "category": "Fiction",
@@ -78,6 +82,7 @@ class TestDatabase(BaseTestCase):
             "img": "url"}
         lfa_dict = {
             "isbn": "isbn2",
+            "owner_id": 2,
             "title": "Looking for Alaska",
             "author": "John Green",
             "category": "Fiction",
@@ -90,70 +95,70 @@ class TestDatabase(BaseTestCase):
             [babel_dict, lfa_dict])
 
     def test_logs_putAndGet(self):
-        self.db.putLog('some-isbn', Action.CREATE, 1234)
+        self.db.putLog('some-id', Action.CREATE, 1234)
 
-        res = self.db.getLatestLog('some-isbn').to_dict()
+        res = self.db.getLatestLog('some-id').to_dict()
 
-        self.assertEqual(res['isbn'], 'some-isbn')
+        self.assertEqual(res['book_id'], 'some-id')
         self.assertEqual(res['action'], Action.CREATE.value)
         self.assertEqual(res['user_id'], 1234)
         self.assertAboutNow(res['timestamp'])
 
     def test_logs_getsMostRecent(self):
-        self.db.putLog('some-isbn', Action.CREATE, 1234)
+        self.db.putLog('some-id', Action.CREATE, 1234)
         time.sleep(0.01)
-        self.db.putLog('some-isbn', Action.CHECKOUT, 5678)
+        self.db.putLog('some-id', Action.CHECKOUT, 5678)
 
-        res = self.db.getLatestLog('some-isbn').to_dict()
+        res = self.db.getLatestLog('some-id').to_dict()
 
-        self.assertEqual(res['isbn'], 'some-isbn')
+        self.assertEqual(res['book_id'], 'some-id')
         self.assertEqual(res['action'], Action.CHECKOUT.value)
         self.assertEqual(res['user_id'], 5678)
 
-    def test_logs_getsMatchingIsbn(self):
-        self.db.putLog('isbn1', Action.CREATE, 1234)
-        self.db.putLog('isbn2', Action.CHECKOUT, 5678)
+    def test_logs_getsMatchingId(self):
+        self.db.putLog('id1', Action.CREATE, 1234)
+        self.db.putLog('id2', Action.CHECKOUT, 5678)
 
-        res = self.db.getLatestLog('isbn1').to_dict()
+        res = self.db.getLatestLog('id1').to_dict()
 
-        self.assertEqual(res['isbn'], 'isbn1')
+        self.assertEqual(res['book_id'], 'id1')
         self.assertEqual(res['action'], Action.CREATE.value)
         self.assertEqual(res['user_id'], 1234)
 
     def test_logs_noneMatching(self):
-        res = self.db.getLatestLog('isbn1')
+        res = self.db.getLatestLog('id1')
 
         self.assertIsNone(res)
 
-    def test_logs_listByIsbn(self):
-        self.db.putLog('isbn1', Action.CREATE, 1234)
+    def test_logs_listByBook(self):
+        self.db.putLog('id1', Action.CREATE, 1234)
         time.sleep(0.01)
-        self.db.putLog('isbn1', Action.CHECKOUT, 5678)
-        self.db.putLog('isbn2', Action.CREATE, 9001)
+        self.db.putLog('id1', Action.CHECKOUT, 5678)
+        self.db.putLog('id2', Action.CREATE, 9001)
 
-        res = self.db.listLogsByIsbn('isbn1')
+        res = self.db.listLogsByBook('id1')
 
         self.assertEqual(len(res), 2)
-        self.assertEqual(res[0].to_dict()["isbn"], 'isbn1')
+        self.assertEqual(res[0].to_dict()["book_id"], 'id1')
         self.assertEqual(res[0].to_dict()["action"], Action.CREATE.value)
         self.assertEqual(res[0].to_dict()["user_id"], 1234)
-        self.assertEqual(res[1].to_dict()["isbn"], 'isbn1')
+        self.assertEqual(res[1].to_dict()["book_id"], 'id1')
         self.assertEqual(res[1].to_dict()["action"], Action.CHECKOUT.value)
         self.assertEqual(res[1].to_dict()["user_id"], 5678)
 
     def test_logs_listByUser(self):
-        self.db.putLog('isbn1', Action.CHECKOUT, 1234)
+        self.db.putLog('id1', Action.CHECKOUT, 1234)
         time.sleep(0.01)
-        self.db.putLog('isbn2', Action.RETURN, 1234)
-        self.db.putLog('isbn3', Action.CHECKOUT, 5678)
+        self.db.putLog('id2', Action.RETURN, 1234)
+        self.db.putLog('id3', Action.CHECKOUT, 5678)
 
         res = self.db.listLogsByUser(1234)
 
         self.assertEqual(len(res), 2)
-        self.assertEqual(res[0].to_dict()["isbn"], 'isbn1')
+        self.assertEqual(res[0].to_dict()["book_id"], 'id1')
         self.assertEqual(res[0].to_dict()["action"], Action.CHECKOUT.value)
         self.assertEqual(res[0].to_dict()["user_id"], 1234)
-        self.assertEqual(res[1].to_dict()["isbn"], 'isbn2')
+        self.assertEqual(res[1].to_dict()["book_id"], 'id2')
         self.assertEqual(res[1].to_dict()["action"], Action.RETURN.value)
         self.assertEqual(res[1].to_dict()["user_id"], 1234)
 

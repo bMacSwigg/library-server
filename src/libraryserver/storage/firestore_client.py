@@ -22,10 +22,11 @@ class Database:
         else:
             return books[0]
 
-    def putBook(self, isbn, title, author, cat, year, img):
+    def putBook(self, isbn, owner_id, title, author, cat, year, img):
         book = self.books_ref.document()
         book.set({
             "isbn": isbn,
+            "owner_id": owner_id,
             "title": title,
             "author": author,
             "category": cat,
@@ -46,19 +47,19 @@ class Database:
             search.lower() in book.get('author').lower()
         )
 
-    def putLog(self, isbn: str, action: Action, user_id: int = 0):
+    def putLog(self, book_id: str, action: Action, user_id: int = 0):
         log = self.logs_ref.document()
         log.set({
-            "isbn": isbn,
+            "book_id": book_id,
             "timestamp": firestore.SERVER_TIMESTAMP,
             "action": action.value,
             "user_id": user_id
         })
 
-    def getLatestLog(self, isbn: str) -> DocumentSnapshot|None:
+    def getLatestLog(self, book_id: str) -> DocumentSnapshot|None:
         log = (
             self.logs_ref
-            .where(filter=FieldFilter("isbn", "==", isbn))
+            .where(filter=FieldFilter("book_id", "==", book_id))
             .order_by('timestamp', direction='DESCENDING')
             .get()
         )
@@ -68,10 +69,10 @@ class Database:
             # Maybe default value instead?
             return None
 
-    def listLogsByIsbn(self, isbn: str) -> list[DocumentSnapshot]:
+    def listLogsByBook(self, book_id: str) -> list[DocumentSnapshot]:
         return (
             self.logs_ref
-            .where(filter=FieldFilter("isbn", "==", isbn))
+            .where(filter=FieldFilter("book_id", "==", book_id))
             .order_by('timestamp', direction='ASCENDING')
             .get()
         )
