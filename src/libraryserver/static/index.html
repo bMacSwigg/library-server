@@ -11,8 +11,16 @@
 <body>
   <button id="signInButton" onclick="toggle()">Sign in</button>
   <div class="section" id="actions">
-    <button onclick="getBooks()">Get Books</button>
-    <button onclick="getUsers()">Get Users</button>
+    <div class="section" id="getBook">
+      <input type="text" id="isbn">
+      <button onclick="getBook()">Get Book</button>
+    </div>
+    <div class="section" id="listBooks">
+      <button onclick="listBooks()">List Books</button>
+    </div>
+    <div class="section" id="listUsers">
+      <button onclick="listUsers()">List Users</button>
+    </div>
   </div>
 </body>
 </html>

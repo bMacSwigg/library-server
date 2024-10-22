@@ -98,7 +98,19 @@ async function requestWrapper(doRequest) {
   }
 }
 
-async function getBooks() {
+async function getBook() {
+  const isbn = document.getElementById("isbn").value;
+  requestWrapper(token => {
+    return fetch(`/v0/books/${isbn}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  })
+}
+
+async function listBooks() {
   requestWrapper(token => {
     return fetch('/v0/books', {
       method: 'GET',
@@ -109,7 +121,7 @@ async function getBooks() {
   })
 }
 
-async function getUsers() {
+async function listUsers() {
   requestWrapper(token => {
     return fetch('/v0/users', {
       method: 'GET',
