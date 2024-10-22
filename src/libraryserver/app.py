@@ -7,6 +7,7 @@ import os
 
 from libraryserver.api.errors import InvalidStateException, NotFoundException
 from libraryserver.api.models import Book
+from libraryserver.auth import user_authenticated
 from libraryserver.config import APP_CONFIG
 from libraryserver.storage.local import LocalBookService, LocalUserService
 from libraryserver.storage.firestore_client import Database
@@ -27,6 +28,7 @@ db = Database(firestore.client())
 # Books API
 @app.route('/v0/books/<book_id>', methods=['GET'])
 @jwt_authenticated
+@user_authenticated(db)
 def getBook(book_id):
     """
         getBook() : Retrieve book by ID (currently, ISBN)
@@ -40,6 +42,7 @@ def getBook(book_id):
 
 @app.route('/v0/books', methods=['GET'])
 @jwt_authenticated
+@user_authenticated(db)
 def listBooks():
     """
         listBooks() : List all books. At most one of 'query' and 'is_out' may
@@ -65,6 +68,7 @@ def listBooks():
 
 @app.route('/v0/books', methods=['POST'])
 @jwt_authenticated
+@user_authenticated(db)
 def createBook():
     """
         createBook() : Create a new Book.
@@ -81,6 +85,7 @@ def createBook():
 
 @app.route('/v0/books/<book_id>/checkout', methods=['POST'])
 @jwt_authenticated
+@user_authenticated(db)
 def checkoutBook(book_id):
     """
         checkoutBook() : Mark this book as checked out by a given user. Book
@@ -102,6 +107,7 @@ def checkoutBook(book_id):
 
 @app.route('/v0/books/<book_id>/return', methods=['POST'])
 @jwt_authenticated
+@user_authenticated(db)
 def returnBook(book_id):
     """
         returnBook() : Mark this book as returned, by whoever checked it out.
@@ -116,6 +122,7 @@ def returnBook(book_id):
 
 @app.route('/v0/books/<book_id>/history', methods=['GET'])
 @jwt_authenticated
+@user_authenticated(db)
 def listBookCheckoutHistory(book_id):
     """
         listBookCheckoutHistory() : List the CHECKOUT and RETURN log events
@@ -127,6 +134,7 @@ def listBookCheckoutHistory(book_id):
 # Users API
 @app.route('/v0/users/<int:user_id>', methods=['GET'])
 @jwt_authenticated
+@user_authenticated(db)
 def getUser(user_id):
     """
         getUser() : Retrieve user by ID
@@ -136,6 +144,7 @@ def getUser(user_id):
 
 @app.route('/v0/users', methods=['GET'])
 @jwt_authenticated
+@user_authenticated(db)
 def listUsers():
     """
         listUsers() : List all users.
@@ -146,6 +155,7 @@ def listUsers():
 
 @app.route('/v0/users', methods=['POST'])
 @jwt_authenticated
+@user_authenticated(db)
 def createUser():
     """
         createUser() : Create a new User.
@@ -162,6 +172,7 @@ def createUser():
 
 @app.route('/v0/users/<int:user_id>/history', methods=['GET'])
 @jwt_authenticated
+@user_authenticated(db)
 def listUserCheckoutHistory(user_id):
     """
         listUserCheckoutHistory() : List the CHECKOUT and RETURN log events
