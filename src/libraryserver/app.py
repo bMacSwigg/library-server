@@ -33,7 +33,6 @@ def check():
     """
         check() : Validate that the caller is logged in and can access the API
     """
-    print("checked")
     return "", 200
 
 # Books API
@@ -61,8 +60,6 @@ def listBooks():
         or author contains 'query' as a substring. If 'is_out' is specified,
         filters to only books that are (or are not) currently checked out.
     """
-    print(request.uid)
-
     if 'query' in request.args and 'is_out' in request.args:
         return "'query' and 'is_out' filters cannot both be specified", 400
 
@@ -86,7 +83,7 @@ def createBook():
     """
     try: 
         json = request.json['book']
-        book = Book(json['isbn'], json['title'], json['author'],
+        book = Book(json['isbn'], user.user_id, json['title'], json['author'],
                     json['category'], json['year'], json['thumbnail'])
     except KeyError:
         return "Missing property", 400
