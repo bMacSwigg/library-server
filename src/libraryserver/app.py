@@ -25,6 +25,17 @@ else:
     initialize_app()
 db = Database(firestore.client())
 
+# Meta-API
+@app.route('/v0/check', methods=['GET'])
+@jwt_authenticated
+@user_authenticated(db)
+def check():
+    """
+        check() : Validate that the caller is logged in and can access the API
+    """
+    print("checked")
+    return "", 200
+
 # Books API
 @app.route('/v0/books/<book_id>', methods=['GET'])
 @jwt_authenticated

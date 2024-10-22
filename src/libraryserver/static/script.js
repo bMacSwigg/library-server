@@ -27,7 +27,14 @@ function initApp() {
     if (user) {
       // User is signed in.
       document.getElementById('signInButton').innerText = 'Sign Out';
-      document.getElementById('actions').style.display = '';
+      return validateUser().then(valid => {
+        if (valid) {
+          document.getElementById('actions').style.display = '';
+        } else {
+          document.getElementById('actions').style.display = 'none';
+          window.alert(`Sign in successful, but user is not authorized.`);
+        }
+      });
     } else {
       // No user is signed in.
       document.getElementById('signInButton').innerText = 'Sign in';
@@ -48,7 +55,6 @@ function signIn() {
     .then(result => {
       // Returns the signed in user along with the provider's credential
       console.log(`${result.user.displayName} logged in.`);
-      window.alert(`Welcome ${result.user.displayName}!`);
     })
     .catch(err => {
       console.log(`Error during sign in: ${err.message}`);
@@ -74,6 +80,26 @@ function toggle() {
   } else {
     signOut();
   }
+}
+
+async function validateUser() {
+  if (firebase.auth().currentUser) {
+    try {
+      const token = await firebase.auth().currentUser.getIdToken();
+      const response = await fetch('/v0/check', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        return true;
+      }
+    } catch (err) {
+      console.log(`Error when validating user: ${err}`);
+    }
+  }
+  return false;
 }
 
 async function requestWrapper(doRequest) {
