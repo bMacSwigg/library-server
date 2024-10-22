@@ -153,23 +153,6 @@ def listUsers():
 
     return jsonify(list(map(asdict, users))), 200
 
-@app.route('/v0/users', methods=['POST'])
-@jwt_authenticated
-@user_authenticated(db)
-def createUser():
-    """
-        createUser() : Create a new User.
-    """
-    try: 
-        json = request.json['user']
-        name = json['name']
-        email = json['email']
-    except KeyError:
-        return "Missing property", 400
-    else:
-        user = LocalUserService(db).createUser(name, email)
-        return jsonify(user), 200
-
 @app.route('/v0/users/<int:user_id>/history', methods=['GET'])
 @jwt_authenticated
 @user_authenticated(db)
