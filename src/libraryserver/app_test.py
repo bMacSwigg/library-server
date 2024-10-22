@@ -30,14 +30,14 @@ class TestApp(unittest.TestCase):
     def test_getBook_exists(self):
         self.db.putBook('1234', 'A Book', 'Somebody', 'cat', 'year', 'img')
 
-        res = self.client.get("/books/1234")
+        res = self.client.get("/v0/books/1234")
 
         data = json.loads(res.data.decode('UTF-8'))
         self.assertEqual(data['title'], 'A Book')
         self.assertEqual(data['author'], 'Somebody')
 
     def test_getBook_doesNotExist(self):
-        res = self.client.get("/books/1234")
+        res = self.client.get("/v0/books/1234")
 
         self.assertEqual(res.status_code, 404)
 
@@ -45,7 +45,7 @@ class TestApp(unittest.TestCase):
         self.db.putBook('1234', 'A Book', 'Somebody', 'cat', 'year', 'img')
         self.db.putBook('5678', 'Sequel', 'Somebody', 'cat', 'year', 'img')
 
-        res = self.client.get("/books")
+        res = self.client.get("/v0/books")
 
         data = json.loads(res.data.decode('UTF-8'))
         self.assertEqual(len(data), 2)
@@ -54,7 +54,7 @@ class TestApp(unittest.TestCase):
         self.db.putBook('1234', 'A Book', 'Somebody', 'cat', 'year', 'img')
         self.db.putBook('5678', 'Sequel', 'Somebody', 'cat', 'year', 'img')
 
-        res = self.client.get("/books?query=sequel")
+        res = self.client.get("/v0/books?query=sequel")
 
         data = json.loads(res.data.decode('UTF-8'))
         self.assertEqual(len(data), 1)
@@ -67,11 +67,11 @@ class TestApp(unittest.TestCase):
         self.db.putUser(9999, 'user', 'fake-email')
         self.db.putUser(1111, 'other', 'other-email')
 
-        self.client.post("/books/1234/checkout", json={'user_id': 9999})
-        self.client.post("/books/1234/return")
-        self.client.post("/books/5678/checkout", json={'user_id': 1111})
+        self.client.post("/v0/books/1234/checkout", json={'user_id': 9999})
+        self.client.post("/v0/books/1234/return")
+        self.client.post("/v0/books/5678/checkout", json={'user_id': 1111})
 
-        res = self.client.get("/users/9999/history")
+        res = self.client.get("/v0/users/9999/history")
 
         data = json.loads(res.data.decode('UTF-8'))
         self.assertEqual(len(data), 2)

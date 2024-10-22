@@ -24,7 +24,7 @@ else:
 db = Database(firestore.client())
 
 # Books API
-@app.route('/books/<book_id>', methods=['GET'])
+@app.route('/v0/books/<book_id>', methods=['GET'])
 def getBook(book_id):
     """
         getBook() : Retrieve book by ID (currently, ISBN)
@@ -36,7 +36,7 @@ def getBook(book_id):
     else:
         return jsonify(asdict(book)), 200
 
-@app.route('/books', methods=['GET'])
+@app.route('/v0/books', methods=['GET'])
 def listBooks():
     """
         listBooks() : List all books. At most one of 'query' and 'is_out' may
@@ -58,7 +58,7 @@ def listBooks():
 
     return jsonify(list(map(asdict, books))), 200
 
-@app.route('/books', methods=['POST'])
+@app.route('/v0/books', methods=['POST'])
 def createBook():
     """
         createBook() : Create a new Book.
@@ -73,7 +73,7 @@ def createBook():
         LocalBookService(db).createBook(book)
         return "Book created", 200
 
-@app.route('/books/<book_id>/checkout', methods=['POST'])
+@app.route('/v0/books/<book_id>/checkout', methods=['POST'])
 def checkoutBook(book_id):
     """
         checkoutBook() : Mark this book as checked out by a given user. Book
@@ -93,7 +93,7 @@ def checkoutBook(book_id):
     else:
         return "Checked out", 200
 
-@app.route('/books/<book_id>/return', methods=['POST'])
+@app.route('/v0/books/<book_id>/return', methods=['POST'])
 def returnBook(book_id):
     """
         returnBook() : Mark this book as returned, by whoever checked it out.
@@ -106,7 +106,7 @@ def returnBook(book_id):
     else:
         return "Returned", 200
 
-@app.route('/books/<book_id>/history', methods=['GET'])
+@app.route('/v0/books/<book_id>/history', methods=['GET'])
 def listBookCheckoutHistory(book_id):
     """
         listBookCheckoutHistory() : List the CHECKOUT and RETURN log events
@@ -116,7 +116,7 @@ def listBookCheckoutHistory(book_id):
     return jsonify(list(map(asdict, logs))), 200
 
 # Users API
-@app.route('/users/<int:user_id>', methods=['GET'])
+@app.route('/v0/users/<int:user_id>', methods=['GET'])
 def getUser(user_id):
     """
         getUser() : Retrieve user by ID
@@ -124,7 +124,7 @@ def getUser(user_id):
     user = LocalUserService(db).getUser(user_id)
     return jsonify(user), 200
 
-@app.route('/users', methods=['GET'])
+@app.route('/v0/users', methods=['GET'])
 def listUsers():
     """
         listUsers() : List all users.
@@ -133,7 +133,7 @@ def listUsers():
 
     return jsonify(list(map(asdict, users))), 200
 
-@app.route('/users', methods=['POST'])
+@app.route('/v0/users', methods=['POST'])
 def createUser():
     """
         createUser() : Create a new User.
@@ -148,7 +148,7 @@ def createUser():
         user = LocalUserService(db).createUser(name, email)
         return jsonify(user), 200
 
-@app.route('/users/<int:user_id>/history', methods=['GET'])
+@app.route('/v0/users/<int:user_id>/history', methods=['GET'])
 def listUserCheckoutHistory(user_id):
     """
         listUserCheckoutHistory() : List the CHECKOUT and RETURN log events
