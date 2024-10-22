@@ -33,6 +33,7 @@ class Database:
             "year": year,
             "img": img
         })
+        return book.id
 
     def listBooks(self, search: str|None = None) -> list[DocumentSnapshot]:
         books = self.books_ref.get()

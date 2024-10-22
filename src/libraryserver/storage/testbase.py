@@ -1,5 +1,8 @@
+import dataclasses
 import unittest
 from datetime import datetime, UTC
+
+from libraryserver.api.models import Book
 
 class BaseTestCase(unittest.TestCase):
     
@@ -15,3 +18,7 @@ class BaseTestCase(unittest.TestCase):
     def assertQueryDataMatches(self, actual, expected):
         a = list(map(lambda res: res.to_dict(), actual))
         self.assertCountEqual(a, expected)
+
+    def assertEqualExceptId(self, actual: Book, expected: Book):
+        replacement = dataclasses.replace(expected, book_id=actual.book_id)
+        self.assertEqual(actual, replacement)

@@ -24,7 +24,7 @@ class LocalBookService(BookService):
             else None
         )
         action = Action(log_vals.get("action"))
-        return LogEntry(log_vals.get("isbn"), log_vals.get("timestamp"),
+        return LogEntry(log_vals.get("book_id"), log_vals.get("timestamp"),
                         action, user_id, user)
 
     def _bookFromDocs(self, book_vals: DocumentSnapshot,
@@ -32,7 +32,7 @@ class LocalBookService(BookService):
         if log_vals:
             log = self._parseLogs(log_vals)
         else:
-            log = LogEntry(book_vals.get("isbn"), "", Action.UNKNOWN, None, None)
+            log = LogEntry(book_vals.id, "", Action.UNKNOWN, None, None)
 
         is_out = (log.action == Action.CHECKOUT)
         if is_out:
@@ -40,16 +40,16 @@ class LocalBookService(BookService):
         else:
             (checkout_user, checkout_time) = ('', '')
 
-        return Book(book_vals.get("isbn"), book_vals.get("title"),
-                    book_vals.get("author"), book_vals.get("category"),
-                    book_vals.get("year"), book_vals.get("img"),
-                    is_out, checkout_user, checkout_time)
+        return Book(book_vals.id, book_vals.get("isbn"), book_vals.get("owner_id"),
+                    book_vals.get("title"), book_vals.get("author"),
+                    book_vals.get("category"), book_vals.get("year"),
+                    book_vals.get("img"), is_out, checkout_user, checkout_time)
 
     def getBook(self, isbn: str) -> Book:
         book_vals = self.db.getBook(isbn)
         if book_vals is None:
             raise NotFoundException('No book in database with ISBN %s' % isbn)
-        log_vals = self.db.getLatestLog(isbn)
+        log_vals = self.db.getLatestLog(book_vals.id)
         return self._bookFromDocs(book_vals, log_vals)
 
     def listBooks(self, search: str|None = None) -> list[Book]:
@@ -57,7 +57,7 @@ class LocalBookService(BookService):
         # It would probably be more efficient to do this with a JOIN in the DB
         # query. But this is simpler, and the scale of data is too small to matter.
         return [self._bookFromDocs(book_vals,
-                                   self.db.getLatestLog(book_vals.get("isbn")))
+                                   self.db.getLatestLog(book_vals.id))
                 for book_vals in vals]
 
     # Lists all checked-out or checked-in books
@@ -65,37 +65,41 @@ class LocalBookService(BookService):
         allBooks = self.listBooks()
         return [b for b in allBooks if b.is_out == is_out]
 
-    def createBook(self, book: Book):
-        self.db.putBook(book.isbn, book.title, book.author,
-                        book.category, book.year, book.thumbnail)
-        self.db.putLog(book.isbn, Action.CREATE)
+    def createBook(self, book: Book) -> str:
+        book_id = self.db.putBook(book.isbn, book.owner_id, book.title,
+                                  book.author, book.category, book.year,
+                                  book.thumbnail)
+        self.db.putLog(book_id, Action.CREATE)
+        return book_id
 
     def checkoutBook(self, isbn: str, user: User):
-        prev_log = self.db.getLatestLog(isbn)
+        book_id = self.db.getBook(isbn).id
+        prev_log = self.db.getLatestLog(book_id)
         if prev_log and prev_log.get("action") == Action.CHECKOUT.value:
             raise InvalidStateException('Book with ISBN %s already out' % isbn)
 
-        self.db.putLog(isbn, Action.CHECKOUT, user.user_id)
+        self.db.putLog(book_id, Action.CHECKOUT, user.user_id)
 
         book = self.getBook(isbn)
         self.email.send_checkout_message(book, user)
 
     def returnBook(self, isbn: str):
-        checkout_log = self.db.getLatestLog(isbn)
+        book_id = self.db.getBook(isbn).id
+        checkout_log = self.db.getLatestLog(book_id)
         if not checkout_log or checkout_log.get("action") != Action.CHECKOUT.value:
             raise InvalidStateException('Book with ISBN %s is not out' % isbn)
 
         user_id = checkout_log.get("user_id")
-        self.db.putLog(isbn, Action.RETURN, user_id)
+        self.db.putLog(book_id, Action.RETURN, user_id)
 
         book = self.getBook(isbn)
         user_vals = self.db.getUser(user_id)
         user = User(user_id, user_vals.get("name"), user_vals.get("email"))
-        ret_time = self.db.getLatestLog(isbn).get("timestamp")
+        ret_time = self.db.getLatestLog(book_id).get("timestamp")
         self.email.send_return_message(book, user, ret_time)
 
-    def listBookCheckoutHistory(self, isbn: str) -> list[LogEntry]:
-        logs = self.db.listLogsByIsbn(isbn)
+    def listBookCheckoutHistory(self, book_id: str) -> list[LogEntry]:
+        logs = self.db.listLogsByBook(book_id)
         logs = map(self._parseLogs, logs)
         logs = filter(lambda l: l.action in [Action.CHECKOUT, Action.RETURN], logs)
         return list(logs)
