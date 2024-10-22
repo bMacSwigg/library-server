@@ -84,15 +84,47 @@ class Database:
             .get()
         )
 
-    def putUser(self, user_id, name, email):
+    def putUser(self, user_id: int, name: str, email: str):
         user = self.users_ref.document(str(user_id))
         user.set({
             "name": name,
             "email": email
         })
         
-    def getUser(self, user_id) -> DocumentSnapshot:
+    def getUser(self, user_id: int) -> DocumentSnapshot:
         return self.users_ref.document(str(user_id)).get()
 
     def listUsers(self) -> list[DocumentSnapshot]:
         return self.users_ref.get()
+
+    def setUserTokenUid(self, user_id: int, token_uid: str):
+        user = self.users_ref.document(str(user_id))
+        user.update({"token_uid": token_uid})
+
+    def getUserByTokenUid(self, token_uid: str) -> DocumentSnapshot|None:
+        users = (
+            self.users_ref
+            .where(filter=FieldFilter("token_uid", "==", token_uid))
+            .get()
+        )
+        if len(users) == 1:
+            return users[0]
+        elif len(users) == 0:
+            return None
+        else:
+            # would be better if Firestore could enforce uniqueness on writes...
+            raise RuntimeError("Multiple users with the same token_uid")
+
+    def getUserByEmail(self, email: str) -> DocumentSnapshot|None:
+        users = (
+            self.users_ref
+            .where(filter=FieldFilter("email", "==", email))
+            .get()
+        )
+        if len(users) == 1:
+            return users[0]
+        elif len(users) == 0:
+            return None
+        else:
+            raise RuntimeError("Multiple users with the same email")
+

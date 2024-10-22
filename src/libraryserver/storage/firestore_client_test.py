@@ -1,4 +1,5 @@
 import os
+import time
 import unittest
 from datetime import datetime, UTC
 from firebase_admin import credentials, firestore, initialize_app
@@ -100,6 +101,7 @@ class TestDatabase(BaseTestCase):
 
     def test_logs_getsMostRecent(self):
         self.db.putLog('some-isbn', Action.CREATE, 1234)
+        time.sleep(0.01)
         self.db.putLog('some-isbn', Action.CHECKOUT, 5678)
 
         res = self.db.getLatestLog('some-isbn').to_dict()
@@ -125,6 +127,7 @@ class TestDatabase(BaseTestCase):
 
     def test_logs_listByIsbn(self):
         self.db.putLog('isbn1', Action.CREATE, 1234)
+        time.sleep(0.01)
         self.db.putLog('isbn1', Action.CHECKOUT, 5678)
         self.db.putLog('isbn2', Action.CREATE, 9001)
 
@@ -140,6 +143,7 @@ class TestDatabase(BaseTestCase):
 
     def test_logs_listByUser(self):
         self.db.putLog('isbn1', Action.CHECKOUT, 1234)
+        time.sleep(0.01)
         self.db.putLog('isbn2', Action.RETURN, 1234)
         self.db.putLog('isbn3', Action.CHECKOUT, 5678)
 
@@ -173,6 +177,56 @@ class TestDatabase(BaseTestCase):
                "email": 'john@example.com'},
               {"name": 'Jane Doe',
                "email": 'jane@example.com'}])
+
+    def test_user_tokenUidMatch(self):
+        self.db.putUser(1234, 'John Doe', 'john@example.com')
+        self.db.setUserTokenUid(1234, "ABC")
+        self.db.putUser(5678, 'Jane Doe', 'jane@example.com')
+        self.db.setUserTokenUid(5678, "DEF")
+
+        res = self.db.getUserByTokenUid("ABC")
+
+        self.assertEqual(res.id, "1234")
+
+    def test_user_tokenUidUnset(self):
+        self.db.putUser(1234, 'John Doe', 'john@example.com')
+
+        res = self.db.getUserByTokenUid("ABC")
+
+        self.assertIsNone(res)
+
+    def test_user_tokenUidMultiple(self):
+        self.db.putUser(1234, 'John Doe', 'john@example.com')
+        self.db.setUserTokenUid(1234, "ABC")
+        self.db.putUser(5678, 'Jane Doe', 'jane@example.com')
+        self.db.setUserTokenUid(5678, "ABC")
+
+        with self.assertRaises(RuntimeError):
+            res = self.db.getUserByTokenUid("ABC")
+
+    def test_user_emailMatch(self):
+        self.db.putUser(1234, 'John Doe', 'john@example.com')
+        self.db.putUser(5678, 'Jane Doe', 'jane@example.com')
+
+        res = self.db.getUserByEmail("jane@example.com")
+
+        self.assertEqual(res.id, "5678")
+
+    def test_user_emailNoMatch(self):
+        self.db.putUser(1234, 'John Doe', 'john@example.com')
+        self.db.putUser(5678, 'Jane Doe', 'jane@example.com')
+
+        res = self.db.getUserByEmail("other@example.com")
+
+        self.assertIsNone(res)
+
+    def test_user_emailMultiple(self):
+        self.db.putUser(1234, 'John Doe', 'john@example.com')
+        self.db.putUser(5678, 'John Denver', 'john@example.com')
+
+        with self.assertRaises(RuntimeError):
+            res = self.db.getUserByEmail("john@example.com")
+        
 
 if __name__ == '__main__':
     unittest.main()
