@@ -34,11 +34,13 @@ class TestBookService(BaseTestCase):
         requests.delete(del_url)
 
     def test_getBook_exists(self):
-        self.db.putBook('isbn1', 'title', 'author', 'cat', 'year', 'img')
+        self.db.putBook('isbn1', 1, 'title', 'author', 'cat', 'year', 'img')
 
         book = self.books.getBook('isbn1')
 
+        self.assertNotEqual(book.book_id, "")
         self.assertEqual(book.isbn, 'isbn1')
+        self.assertEqual(book.owner_id, 1)
         self.assertEqual(book.title, 'title')
         self.assertEqual(book.author, 'author')
         self.assertEqual(book.category, 'cat')
@@ -46,7 +48,7 @@ class TestBookService(BaseTestCase):
         self.assertEqual(book.thumbnail, 'img')
 
     def test_getBook_setsDefaultLogVals(self):
-        self.db.putBook('isbn1', 'title', 'author', 'cat', 'year', 'img')
+        self.db.putBook('isbn1', 1, 'title', 'author', 'cat', 'year', 'img')
 
         book = self.books.getBook('isbn1')
 
@@ -55,9 +57,9 @@ class TestBookService(BaseTestCase):
         self.assertEqual(book.checkout_time, '')
 
     def test_getBook_setsCheckoutLogVals(self):
-        self.db.putBook('isbn1', 'title', 'author', 'cat', 'year', 'img')
+        book_id = self.db.putBook('isbn1', 1, 'title', 'author', 'cat', 'year', 'img')
         self.db.putUser(1234, 'somebody', 'test@example.com')
-        self.db.putLog('isbn1', Action.CHECKOUT, 1234)
+        self.db.putLog(book_id, Action.CHECKOUT, 1234)
 
         book = self.books.getBook('isbn1')
 
@@ -66,8 +68,8 @@ class TestBookService(BaseTestCase):
         self.assertAboutNow(book.checkout_time)
 
     def test_getBook_setsReturnLogVals(self):
-        self.db.putBook('isbn1', 'title', 'author', 'cat', 'year', 'img')
-        self.db.putLog('isbn1', Action.RETURN)
+        book_id = self.db.putBook('isbn1', 1, 'title', 'author', 'cat', 'year', 'img')
+        self.db.putLog(book_id, Action.RETURN)
 
         book = self.books.getBook('isbn1')
 
@@ -76,8 +78,8 @@ class TestBookService(BaseTestCase):
         self.assertEqual(book.checkout_time, '')
 
     def test_getBook_setsCreateLogVals(self):
-        self.db.putBook('isbn1', 'title', 'author', 'cat', 'year', 'img')
-        self.db.putLog('isbn1', Action.CREATE)
+        book_id = self.db.putBook('isbn1', 1, 'title', 'author', 'cat', 'year', 'img')
+        self.db.putLog(book_id, Action.CREATE)
 
         book = self.books.getBook('isbn1')
 
@@ -90,19 +92,23 @@ class TestBookService(BaseTestCase):
             self.books.getBook('isbn1')
 
     def test_listBooks(self):
-        self.db.putBook('isbn1', 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
-        self.db.putBook('isbn2', 'Looking For Alaska', 'John Green', 'Fiction', '2005', 'url')
+        b1 = self.db.putBook('isbn1', 1, 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
+        b2 = self.db.putBook('isbn2', 2, 'Looking For Alaska', 'John Green', 'Fiction', '2005', 'url')
 
         books = self.books.listBooks()
         books.sort(key=lambda b: b.isbn)
 
+        self.assertEqual(books[0].book_id, b1)
         self.assertEqual(books[0].isbn, 'isbn1')
+        self.assertEqual(books[0].owner_id, 1)
         self.assertEqual(books[0].title, 'Babel')
         self.assertEqual(books[0].author, 'R.F. Kuang')
         self.assertEqual(books[0].category, 'Fiction')
         self.assertEqual(books[0].year, '2022')
         self.assertEqual(books[0].thumbnail, 'url')
+        self.assertEqual(books[1].book_id, b2)
         self.assertEqual(books[1].isbn, 'isbn2')
+        self.assertEqual(books[1].owner_id, 2)
         self.assertEqual(books[1].title, 'Looking For Alaska')
         self.assertEqual(books[1].author, 'John Green')
         self.assertEqual(books[1].category, 'Fiction')
@@ -111,11 +117,11 @@ class TestBookService(BaseTestCase):
 
     def test_listBooks_setsLogValues(self):
         self.db.putUser(1234, 'somebody', 'test@example.com')
-        self.db.putBook('isbn1', '', '', '', '', '')
-        self.db.putBook('isbn2', '', '', '', '', '')
-        self.db.putLog('isbn1', Action.CREATE)
-        self.db.putLog('isbn2', Action.CREATE)
-        self.db.putLog('isbn1', Action.CHECKOUT, 1234)
+        b1 = self.db.putBook('isbn1', 1, '', '', '', '', '')
+        b2 = self.db.putBook('isbn2', 1, '', '', '', '', '')
+        self.db.putLog(b1, Action.CREATE)
+        self.db.putLog(b2, Action.CREATE)
+        self.db.putLog(b1, Action.CHECKOUT, 1234)
 
         books = self.books.listBooks()
         books.sort(key=lambda b: b.isbn)
@@ -130,8 +136,8 @@ class TestBookService(BaseTestCase):
         self.assertEqual(books[1].checkout_time, '')
 
     def test_listBooks_withSearch(self):
-        self.db.putBook('isbn1', 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
-        self.db.putBook('isbn2', 'Looking For Alaska', 'John Green', 'Fiction', '2005', 'url')
+        self.db.putBook('isbn1', 1, 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
+        self.db.putBook('isbn2', 2, 'Looking For Alaska', 'John Green', 'Fiction', '2005', 'url')
 
         books = self.books.listBooks('looking')
 
@@ -141,10 +147,10 @@ class TestBookService(BaseTestCase):
 
     def test_listBooksByStatus_checkedOut(self):
         self.db.putUser(1234, 'somebody', 'test@example.com')
-        self.db.putBook('isbn-in', '', '', '', '', '')
-        self.db.putBook('isbn-out', '', '', '', '', '')
-        self.db.putLog('isbn-in', Action.CREATE)
-        self.db.putLog('isbn-out', Action.CHECKOUT, 1234)
+        b_in = self.db.putBook('isbn-in', 1, '', '', '', '', '')
+        b_out = self.db.putBook('isbn-out', 2, '', '', '', '', '')
+        self.db.putLog(b_in, Action.CREATE)
+        self.db.putLog(b_out, Action.CHECKOUT, 1234)
 
         books = self.books.listBooksByStatus(True)
 
@@ -153,10 +159,10 @@ class TestBookService(BaseTestCase):
 
     def test_listBooksByStatus_checkedIn(self):
         self.db.putUser(1234, 'somebody', 'test@example.com')
-        self.db.putBook('isbn-in', '', '', '', '', '')
-        self.db.putBook('isbn-out', '', '', '', '', '')
-        self.db.putLog('isbn-in', Action.CREATE)
-        self.db.putLog('isbn-out', Action.CHECKOUT, 1234)
+        b_in = self.db.putBook('isbn-in', 1, '', '', '', '', '')
+        b_out = self.db.putBook('isbn-out', 2, '', '', '', '', '')
+        self.db.putLog(b_in, Action.CREATE)
+        self.db.putLog(b_out, Action.CHECKOUT, 1234)
 
         books = self.books.listBooksByStatus(False)
 
@@ -164,15 +170,15 @@ class TestBookService(BaseTestCase):
         self.assertEqual(books[0].isbn, 'isbn-in')
         
     def test_createBook(self):
-        book = Book('isbn1', 'Paul', 'Andrea Lawler', 'Fiction', '2017', 'url')
+        book = Book(None, 'isbn1', 1, 'Paul', 'Andrea Lawler', 'Fiction', '2017', 'url')
 
         self.books.createBook(book)
         res = self.books.getBook('isbn1')
 
-        self.assertEqual(res, book)
+        self.assertEqualExceptId(res, book)
 
     def test_checkoutBook(self):
-        book = Book('isbn1', '', '', '', '', '')
+        book = Book(None, 'isbn1', 1, '', '', '', '', '')
         self.books.createBook(book)
         user = User(1234, 'user', 'user@example.com')
         self.db.putUser(user.user_id, user.name, user.email)
@@ -185,7 +191,7 @@ class TestBookService(BaseTestCase):
         self.assertAboutNow(res.checkout_time)
 
     def test_checkoutBook_alreadyOut(self):
-        book = Book('isbn1', '', '', '', '', '')
+        book = Book(None, 'isbn1', 1, '', '', '', '', '')
         self.books.createBook(book)
         user = User(1234, 'user', 'user@example.com')
         self.db.putUser(user.user_id, user.name, user.email)
@@ -199,7 +205,7 @@ class TestBookService(BaseTestCase):
         return
 
     def test_returnBook(self):
-        book = Book('isbn1', '', '', '', '', '')
+        book = Book(None, 'isbn1', 1, '', '', '', '', '')
         self.books.createBook(book)
         user = User(1234, 'user', 'user@example.com')
         self.db.putUser(user.user_id, user.name, user.email)
@@ -207,7 +213,7 @@ class TestBookService(BaseTestCase):
         self.books.returnBook('isbn1')
 
         res = self.books.getBook('isbn1')
-        log = self.db.getLatestLog('isbn1')
+        log = self.db.getLatestLog(res.book_id)
 
         self.assertEqual(res.is_out, False)
         self.assertEqual(res.checkout_user, '')
@@ -217,7 +223,7 @@ class TestBookService(BaseTestCase):
         self.assertEqual(log.get("user_id"), 1234)
 
     def test_returnBook_notOut(self):
-        book = Book('isbn1', '', '', '', '', '')
+        book = Book(None, 'isbn1', 1, '', '', '', '', '')
         self.books.createBook(book)
 
         with self.assertRaises(InvalidStateException):
@@ -228,31 +234,31 @@ class TestBookService(BaseTestCase):
         return
 
     def test_listBookCheckoutHistory(self):
-        self.books.createBook(Book('isbn1', '', '', '', '', ''))
-        self.books.createBook(Book('isbn2', '', '', '', '', ''))
+        b1 = self.books.createBook(Book(None, 'isbn1', 1, '', '', '', '', ''))
+        self.books.createBook(Book(None, 'isbn2', 2, '', '', '', '', ''))
         user = User(1234, 'user', 'user@example.com')
         self.db.putUser(user.user_id, user.name, user.email)
         self.books.checkoutBook('isbn1', user)
         self.books.returnBook('isbn1')
         self.books.checkoutBook('isbn2', user)
 
-        res = self.books.listBookCheckoutHistory('isbn1')
+        res = self.books.listBookCheckoutHistory(b1)
 
         self.assertEqual(len(res), 2)
-        self.assertEqual(res[0].isbn, 'isbn1')
+        self.assertEqual(res[0].book_id, b1)
         self.assertAboutNow(res[0].timestamp)
         self.assertEqual(res[0].action, Action.CHECKOUT)
         self.assertEqual(res[0].user_id, 1234)
         self.assertEqual(res[0].user_name, 'user')
-        self.assertEqual(res[1].isbn, 'isbn1')
+        self.assertEqual(res[1].book_id, b1)
         self.assertAboutNow(res[1].timestamp)
         self.assertEqual(res[1].action, Action.RETURN)
         self.assertEqual(res[1].user_id, 1234)
         self.assertEqual(res[1].user_name, 'user')
 
     def test_listUserCheckoutHistory(self):
-        self.books.createBook(Book('isbn1', '', '', '', '', ''))
-        self.books.createBook(Book('isbn2', '', '', '', '', ''))
+        b1 = self.books.createBook(Book(None, 'isbn1', 1, '', '', '', '', ''))
+        self.books.createBook(Book(None, 'isbn2', 2, '', '', '', '', ''))
         user = self.users.createUser('user', 'user@example.com')
         other = self.users.createUser('other', 'other@example.com')
         self.books.checkoutBook('isbn1', user)
@@ -262,12 +268,12 @@ class TestBookService(BaseTestCase):
         res = self.books.listUserCheckoutHistory(user.user_id)
 
         self.assertEqual(len(res), 2)
-        self.assertEqual(res[0].isbn, 'isbn1')
+        self.assertEqual(res[0].book_id, b1)
         self.assertAboutNow(res[0].timestamp)
         self.assertEqual(res[0].action, Action.CHECKOUT)
         self.assertEqual(res[0].user_id, user.user_id)
         self.assertEqual(res[0].user_name, 'user')
-        self.assertEqual(res[1].isbn, 'isbn1')
+        self.assertEqual(res[1].book_id, b1)
         self.assertAboutNow(res[1].timestamp)
         self.assertEqual(res[1].action, Action.RETURN)
         self.assertEqual(res[1].user_id, user.user_id)

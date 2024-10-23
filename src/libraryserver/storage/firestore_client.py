@@ -22,16 +22,18 @@ class Database:
         else:
             return books[0]
 
-    def putBook(self, isbn, title, author, cat, year, img):
+    def putBook(self, isbn, owner_id, title, author, cat, year, img):
         book = self.books_ref.document()
         book.set({
             "isbn": isbn,
+            "owner_id": owner_id,
             "title": title,
             "author": author,
             "category": cat,
             "year": year,
             "img": img
         })
+        return book.id
 
     def listBooks(self, search: str|None = None) -> list[DocumentSnapshot]:
         books = self.books_ref.get()
@@ -46,19 +48,19 @@ class Database:
             search.lower() in book.get('author').lower()
         )
 
-    def putLog(self, isbn: str, action: Action, user_id: int = 0):
+    def putLog(self, book_id: str, action: Action, user_id: int = 0):
         log = self.logs_ref.document()
         log.set({
-            "isbn": isbn,
+            "book_id": book_id,
             "timestamp": firestore.SERVER_TIMESTAMP,
             "action": action.value,
             "user_id": user_id
         })
 
-    def getLatestLog(self, isbn: str) -> DocumentSnapshot|None:
+    def getLatestLog(self, book_id: str) -> DocumentSnapshot|None:
         log = (
             self.logs_ref
-            .where(filter=FieldFilter("isbn", "==", isbn))
+            .where(filter=FieldFilter("book_id", "==", book_id))
             .order_by('timestamp', direction='DESCENDING')
             .get()
         )
@@ -68,10 +70,10 @@ class Database:
             # Maybe default value instead?
             return None
 
-    def listLogsByIsbn(self, isbn: str) -> list[DocumentSnapshot]:
+    def listLogsByBook(self, book_id: str) -> list[DocumentSnapshot]:
         return (
             self.logs_ref
-            .where(filter=FieldFilter("isbn", "==", isbn))
+            .where(filter=FieldFilter("book_id", "==", book_id))
             .order_by('timestamp', direction='ASCENDING')
             .get()
         )
@@ -84,15 +86,47 @@ class Database:
             .get()
         )
 
-    def putUser(self, user_id, name, email):
+    def putUser(self, user_id: int, name: str, email: str):
         user = self.users_ref.document(str(user_id))
         user.set({
             "name": name,
             "email": email
         })
         
-    def getUser(self, user_id) -> DocumentSnapshot:
+    def getUser(self, user_id: int) -> DocumentSnapshot:
         return self.users_ref.document(str(user_id)).get()
 
     def listUsers(self) -> list[DocumentSnapshot]:
         return self.users_ref.get()
+
+    def setUserTokenUid(self, user_id: int, token_uid: str):
+        user = self.users_ref.document(str(user_id))
+        user.update({"token_uid": token_uid})
+
+    def getUserByTokenUid(self, token_uid: str) -> DocumentSnapshot|None:
+        users = (
+            self.users_ref
+            .where(filter=FieldFilter("token_uid", "==", token_uid))
+            .get()
+        )
+        if len(users) == 1:
+            return users[0]
+        elif len(users) == 0:
+            return None
+        else:
+            # would be better if Firestore could enforce uniqueness on writes...
+            raise RuntimeError("Multiple users with the same token_uid")
+
+    def getUserByEmail(self, email: str) -> DocumentSnapshot|None:
+        users = (
+            self.users_ref
+            .where(filter=FieldFilter("email", "==", email))
+            .get()
+        )
+        if len(users) == 1:
+            return users[0]
+        elif len(users) == 0:
+            return None
+        else:
+            raise RuntimeError("Multiple users with the same email")
+
