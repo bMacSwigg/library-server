@@ -111,9 +111,7 @@ async function requestWrapper(doRequest) {
       const token = await firebase.auth().currentUser.getIdToken();
       const response = await doRequest(token)
       if (response.ok) {
-        const text = await response.text();
-        window.alert(text);
-        window.location.reload();
+        return response.text();
       }
     } catch (err) {
       console.log(`Error when submitting vote: ${err}`);
@@ -125,35 +123,120 @@ async function requestWrapper(doRequest) {
 }
 
 async function getBook() {
-  const isbn = document.getElementById("isbn").value;
-  requestWrapper(token => {
-    return fetch(`/v0/books/${isbn}`, {
+  const isbn = document.getElementById('getbook-isbn').value;
+  const text = await requestWrapper(token =>
+    fetch(`/v0/books/${isbn}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    });
-  })
+    }));
+  document.getElementById('getbook-output').innerText = text;
 }
 
 async function listBooks() {
-  requestWrapper(token => {
-    return fetch('/v0/books', {
+  const text = await requestWrapper(token =>
+    fetch('/v0/books', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    });
-  })
+    }));
+  document.getElementById('listbooks-output').innerText = text;
+}
+
+async function createBook() {
+  const book = {
+    isbn: document.getElementById('createbook-isbn').value,
+    title: document.getElementById('createbook-title').value,
+    author: document.getElementById('createbook-author').value,
+    category: document.getElementById('createbook-category').value,
+    year: document.getElementById('createbook-year').value,
+    thumbnail: document.getElementById('createbook-thumbnail').value,
+  }
+  requestWrapper(token =>
+    fetch('/v0/books', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({book: book}),
+    }));
+}
+
+async function checkoutBook() {
+  const isbn = document.getElementById('checkoutbook-isbn').value;
+  const body = {
+    user_id: document.getElementById('checkoutbook-userid').value,
+  }
+  requestWrapper(token =>
+    fetch(`/v0/books/${isbn}/checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    }));
+}
+
+async function returnBook() {
+  const isbn = document.getElementById('returnbook-isbn').value;
+  requestWrapper(token =>
+    fetch(`/v0/books/${isbn}/return`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: "",
+    }));
+}
+
+async function listBookCheckoutHistory() {
+  const isbn = document.getElementById('bookhistory-isbn').value;
+  const text = await requestWrapper(token =>
+    fetch(`/v0/books/${isbn}/history`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }));
+  document.getElementById('bookhistory-output').innerText = text;
+}
+
+async function getUser() {
+  const user_id = document.getElementById('getuser-id').value;
+  const text = await requestWrapper(token =>
+    fetch(`/v0/users/${user_id}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }));
+  document.getElementById('getuser-output').innerText = text;
 }
 
 async function listUsers() {
-  requestWrapper(token => {
-    return fetch('/v0/users', {
+  const text = await requestWrapper(token =>
+    fetch('/v0/users', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    });
-  })
+    }));
+  document.getElementById('listusers-output').innerText = text;
+}
+
+async function listUserCheckoutHistory() {
+  const user_id = document.getElementById('userhistory-id').value;
+  const text = await requestWrapper(token =>
+    fetch(`/v0/users/${user_id}/history`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }));
+  document.getElementById('userhistory-output').innerText = text;
 }

@@ -83,8 +83,9 @@ def createBook():
     """
     try: 
         json = request.json['book']
-        book = Book(json['isbn'], user.user_id, json['title'], json['author'],
-                    json['category'], json['year'], json['thumbnail'])
+        book = Book(None, json['isbn'], request.user.id, json['title'],
+                    json['author'], json['category'], json['year'],
+                    json['thumbnail'])
     except KeyError:
         return "Missing property", 400
     else:

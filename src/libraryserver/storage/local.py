@@ -78,7 +78,7 @@ class LocalBookService(BookService):
         if prev_log and prev_log.get("action") == Action.CHECKOUT.value:
             raise InvalidStateException('Book with ISBN %s already out' % isbn)
 
-        self.db.putLog(book_id, Action.CHECKOUT, user.user_id)
+        self.db.putLog(book_id, Action.CHECKOUT, int(user.user_id))
 
         book = self.getBook(isbn)
         self.email.send_checkout_message(book, user)

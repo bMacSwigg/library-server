@@ -11,15 +11,66 @@
 <body>
   <button id="signInButton" onclick="toggle()">Sign in</button>
   <div class="section" id="actions">
-    <div class="section" id="getBook">
-      <input type="text" id="isbn">
-      <button onclick="getBook()">Get Book</button>
+    <div class="section" id="getbook">
+      <h1>Get Book</h1>
+      ISBN: <input type="text" id="getbook-isbn"><br/>
+      <button onclick="getBook()">Run</button><br/>
+      <h3>Output:</h3>
+      <div id="getbook-output"></div>
     </div>
-    <div class="section" id="listBooks">
-      <button onclick="listBooks()">List Books</button>
+    <div class="section" id="listbooks">
+      <h1>List Books</h1>
+      <button onclick="listBooks()">Run</button><br/>
+      <h3>Output:</h3>
+      <div id="listbooks-output"></div>
     </div>
-    <div class="section" id="listUsers">
-      <button onclick="listUsers()">List Users</button>
+    <div class="section" id="createbook">
+      <h1>Create Book</h1>
+      ISBN: <input type="text" id="createbook-isbn"><br/>
+      Title: <input type="text" id="createbook-title"><br/>
+      Author: <input type="text" id="createbook-author"><br/>
+      Category: <input type="text" id="createbook-category"><br/>
+      Year: <input type="text" id="createbook-year"><br/>
+      Thumbnail URL: <input type="text" id="createbook-thumbnail"><br/>
+      <button onclick="createBook()">Run</button>
+    </div>
+    <div class="section" id="checkoutbook">
+      <h1>Checkout Book</h1>
+      ISBN: <input type="text" id="checkoutbook-isbn"><br/>
+      User ID: <input type="text" id="checkoutbook-userid"><br/>
+      <button onclick="checkoutBook()">Run</button><br/>
+    </div>
+    <div class="section" id="returnbook">
+      <h1>Return Book</h1>
+      ISBN: <input type="text" id="returnbook-isbn"><br/>
+      <button onclick="returnBook()">Run</button><br/>
+    </div>
+    <div class="section" id="bookhistory">
+      <h1>List Book Checkout History</h1>
+      Book ID (*not* ISBN): <input type="text" id="bookhistory-isbn"><br/>
+      <button onclick="listBookCheckoutHistory()">Run</button><br/>
+      <h3>Output:</h3>
+      <div id="bookhistory-output"></div>
+    </div>
+    <div class="section" id="getuser">
+      <h1>Get User</h1>
+      User ID: <input type="text" id="getuser-id"><br/>
+      <button onclick="getUser()">Run</button><br/>
+      <h3>Output:</h3>
+      <div id="getuser-output"></div>
+    </div>
+    <div class="section" id="listusers">
+      <h1>List Users</h1>
+      <button onclick="listUsers()">Run</button><br/>
+      <h3>Output:</h3>
+      <div id="listusers-output"></div>
+    </div>
+    <div class="section" id="userhistory">
+      <h1>List User Checkout History</h1>
+      User ID: <input type="text" id="userhistory-id"><br/>
+      <button onclick="listUserCheckoutHistory()">Run</button><br/>
+      <h3>Output:</h3>
+      <div id="userhistory-output"></div>
     </div>
   </div>
 </body>
