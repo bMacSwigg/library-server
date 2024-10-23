@@ -36,7 +36,7 @@ class LocalBookService(BookService):
 
         is_out = (log.action == Action.CHECKOUT)
         if is_out:
-            checkout_user, checkout_time = log.user_name, log.timestamp
+            checkout_user, checkout_time = log.user_name, str(log.timestamp)
         else:
             (checkout_user, checkout_time) = ('', '')
 

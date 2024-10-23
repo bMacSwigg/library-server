@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from enum import IntEnum
 
 @dataclass(frozen=True)
@@ -30,7 +31,7 @@ class Action(IntEnum):
 @dataclass(frozen=True)
 class LogEntry:
     book_id: str  # ID of the book that this activity was for
-    timestamp: str  # Time of this activity
+    timestamp: datetime  # Time of this activity
     action: Action  # What the activity was
     user_id: int|None  # The User that performed this action, if any
     user_name: str|None  # The name of the user (if any), for convenience
