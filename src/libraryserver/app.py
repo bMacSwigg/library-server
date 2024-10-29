@@ -1,6 +1,7 @@
 from dataclasses import asdict
 import datetime
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from firebase_admin import credentials, firestore, initialize_app
 import logging
 import os
@@ -15,6 +16,7 @@ from libraryserver.thirdparty.middleware import jwt_authenticated
 
 # Initialize Flask app
 app = Flask(__name__)
+CORS(app, resources={r"*": {"origins": "http://localhost:4200"}})
 
 # Initialize Firestore DB
 if APP_CONFIG.firestore_apikey_file():
