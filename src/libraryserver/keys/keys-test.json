@@ -1,0 +1,4 @@
+{
+  "mailgun_api_key": "test-mailgun",
+  "books_api_key": "test-books"
+}
