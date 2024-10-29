@@ -163,3 +163,5 @@ cython_debug/
 
 # Stores local API keys
 keys.json
+# Firestore structured API key
+run-web-efd188ab2632.json
