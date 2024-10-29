@@ -161,5 +161,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# API key is right now the only json
-*.json
+# Stores local API keys
+keys.json
+# Firestore structured API key
+run-web-efd188ab2632.json

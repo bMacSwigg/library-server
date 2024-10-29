@@ -240,3 +240,15 @@ async function listUserCheckoutHistory() {
     }));
   document.getElementById('userhistory-output').innerText = text;
 }
+
+async function lookupBook() {
+  const isbn = document.getElementById('lookup-isbn').value;
+  const text = await requestWrapper(token =>
+    fetch(`/v0/lookup/${isbn}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }));
+  document.getElementById('lookup-output').innerText = text;
+}
