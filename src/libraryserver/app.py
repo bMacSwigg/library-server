@@ -10,6 +10,8 @@ from libraryserver.api.errors import InvalidStateException, NotFoundException
 from libraryserver.api.models import Book
 from libraryserver.auth import user_authenticated
 from libraryserver.config import APP_CONFIG
+from libraryserver.keys.keymanager import KeyManager
+from libraryserver.lookup.lookup import LookupService
 from libraryserver.storage.local import LocalBookService, LocalUserService
 from libraryserver.storage.firestore_client import Database
 from libraryserver.thirdparty.middleware import jwt_authenticated
@@ -26,6 +28,7 @@ else:
     # use application default credentials
     initialize_app()
 db = Database(firestore.client())
+
 
 # Meta-API
 @app.route('/v0/check', methods=['GET'])
@@ -174,6 +177,18 @@ def listUserCheckoutHistory(user_id):
     """
     logs = LocalBookService(db).listUserCheckoutHistory(user_id)
     return jsonify(list(map(asdict, logs))), 200
+
+# Lookup API
+@app.route('/v0/lookup/<isbn>', methods=['GET'])
+@jwt_authenticated
+@user_authenticated(db)
+def lookupBookDetails(isbn):
+    """
+        lookupBookDetails() : Fetch details on this book from Google Books API
+    """
+    lookup = LookupService(KeyManager())
+    book = lookup.lookupIsbn(isbn)
+    return jsonify(asdict(book)), 200
 
 
 port = int(os.environ.get('PORT', 8080))
