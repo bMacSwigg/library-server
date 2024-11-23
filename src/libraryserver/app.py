@@ -36,9 +36,10 @@ db = Database(firestore.client())
 @user_authenticated(db)
 def check():
     """
-        check() : Validate that the caller is logged in and can access the API
+        check() : Validate that the caller is logged in and can access the API.
+        Returns the user ID.
     """
-    return "", 200
+    return request.user.id, 200
 
 # Books API
 @app.route('/v0/books/<book_id>', methods=['GET'])
