@@ -18,7 +18,10 @@ from libraryserver.thirdparty.middleware import jwt_authenticated
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, resources={r"*": {"origins": "http://localhost:4200"}})
+_ORIGINS = ["http://localhost:4200",
+            "https://library-ui-869102415447.us-central1.run.app/",
+            "https://library.mcswiggen.me/"]
+CORS(app, resources={r"*": {"origins": _ORIGINS}})
 
 # Initialize Firestore DB
 if APP_CONFIG.firestore_apikey_file():
