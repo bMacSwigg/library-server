@@ -175,6 +175,28 @@ def listUsers():
 
     return jsonify(list(map(asdict, users))), 200
 
+@app.route('/v0/users/<int:user_id>', methods=['PATCH'])
+@jwt_authenticated
+@user_authenticated(db)
+def updateUser(user_id):
+    """
+        updateUser() : Update mutable account details. Currently, only supports
+        updating the `name` property.
+    """
+    if user_id != int(request.user.id):
+        print(user_id, request.user.id)
+        print(user_id != request.user.id)
+        return "Cannot update other users", 403
+
+    try: 
+        json = request.json['user']
+        name = json['name']
+    except KeyError:
+        return "Missing property", 400
+    else:
+        LocalUserService(db).updateUser(user_id, name)
+        return "User updated", 200
+
 @app.route('/v0/users/<int:user_id>/history', methods=['GET'])
 @jwt_authenticated
 @user_authenticated(db)

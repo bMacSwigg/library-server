@@ -185,6 +185,15 @@ class TestDatabase(BaseTestCase):
               {"name": 'Jane Doe',
                "email": 'jane@example.com'}])
 
+    def test_user_updateName(self):
+        self.db.putUser(1234, 'Adam', 'adam@example.com')
+
+        self.db.setUserName(1234, 'Bob')
+        res = self.db.getUser(1234)
+
+        self.assertEqual(res.get('name'), 'Bob')
+        self.assertEqual(res.get('email'), 'adam@example.com')
+
     def test_user_tokenUidMatch(self):
         self.db.putUser(1234, 'John Doe', 'john@example.com')
         self.db.setUserTokenUid(1234, "ABC")

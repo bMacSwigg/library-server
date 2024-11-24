@@ -130,3 +130,6 @@ class LocalUserService(UserService):
         vals = self.db.listUsers()
         return [User(int(v.id), v.get("name"), v.get("email")) for v in vals]
 
+    def updateUser(self, user_id: int, name: str):
+        self.db.setUserName(user_id, name)
+

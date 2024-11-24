@@ -327,6 +327,14 @@ class TestUserService(BaseTestCase):
         self.assertEqual(res[1].name, 'Other')
         self.assertEqual(res[1].email, 'someone@example.com')
 
+    def test_updateUser(self):
+        self.db.putUser(1234, 'Brian', 'me@example.com')
+
+        self.users.updateUser(1234, 'Charlie')
+        res = self.users.getUser(1234)
+
+        self.assertEqual(res.name, 'Charlie')
+
 
 if __name__ == '__main__':
     unittest.main()

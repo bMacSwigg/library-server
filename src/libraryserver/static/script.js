@@ -110,11 +110,9 @@ async function requestWrapper(doRequest) {
     try {
       const token = await firebase.auth().currentUser.getIdToken();
       const response = await doRequest(token)
-      if (response.ok) {
-        return response.text();
-      }
+      return response.text();
     } catch (err) {
-      console.log(`Error when submitting vote: ${err}`);
+      console.log(`Error calling API: ${err}`);
       window.alert('Something went wrong... Please try again!');
     }
   } else {
@@ -244,6 +242,23 @@ async function listUserCheckoutHistory() {
       },
     }));
   document.getElementById('userhistory-output').innerText = text;
+}
+
+async function updateUser() {
+  const user_id = document.getElementById('updateuser-userid').value
+  const user = {
+    name: document.getElementById('updateuser-name').value,
+  }
+  const text = await requestWrapper(token =>
+    fetch(`/v0/users/${user_id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({user: user}),
+    }));
+  document.getElementById('updateuser-output').innerText = text;
 }
 
 async function lookupBook() {

@@ -103,6 +103,10 @@ class Database:
     def listUsers(self) -> list[DocumentSnapshot]:
         return self.users_ref.get()
 
+    def setUserName(self, user_id: int, name: str):
+        user = self.users_ref.document(str(user_id))
+        user.update({"name": name})
+
     def setUserTokenUid(self, user_id: int, token_uid: str):
         user = self.users_ref.document(str(user_id))
         user.update({"token_uid": token_uid})
