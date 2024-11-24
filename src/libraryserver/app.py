@@ -184,8 +184,6 @@ def updateUser(user_id):
         updating the `name` property.
     """
     if user_id != int(request.user.id):
-        print(user_id, request.user.id)
-        print(user_id != request.user.id)
         return "Cannot update other users", 403
 
     try: 
