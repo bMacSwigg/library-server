@@ -68,18 +68,22 @@ def listBooks():
         be specified. If 'query' is specified, returns only books whose title
         or author contains 'query' as a substring. If 'is_out' is specified,
         filters to only books that are (or are not) currently checked out.
+        Filters to only books owned by user_id. If user_id is not specified,
+        filters to the ID of the calling user.
     """
     if 'query' in request.args and 'is_out' in request.args:
         return "'query' and 'is_out' filters cannot both be specified", 400
 
+    user_id = request.args.get('user_id', default=request.user.id)
+
     if 'is_out' in request.args:
         is_out = bool(int(request.args['is_out']))
-        books = LocalBookService(db).listBooksByStatus(is_out)
+        books = LocalBookService(db).listBooksByStatus(user_id, is_out)
     elif 'query' in request.args:
         q = request.args['query']
-        books = LocalBookService(db).listBooks(q)
+        books = LocalBookService(db).listBooks(user_id, q)
     else:
-        books = LocalBookService(db).listBooks()
+        books = LocalBookService(db).listBooks(user_id)
 
     return jsonify(list(map(asdict, books))), 200
 

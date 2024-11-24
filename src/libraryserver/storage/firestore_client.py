@@ -35,8 +35,12 @@ class Database:
         })
         return book.id
 
-    def listBooks(self, search: str|None = None) -> list[DocumentSnapshot]:
-        books = self.books_ref.get()
+    def listBooks(self, user_id: int, search: str|None = None) -> list[DocumentSnapshot]:
+        books = (
+            self.books_ref
+            .where(filter=FieldFilter("owner_id", "==", user_id))
+            .get()
+        )
         # have to do filtering here, because Firestore doesn't support search
         if search:
             books = [book for book in books if self._matches(book, search)]

@@ -135,8 +135,13 @@ async function getBook() {
 }
 
 async function listBooks() {
+  const user_id = document.getElementById('listbooks-userid').value;
+  var url = '/v0/books';
+  if (user_id) {
+    url += `?user_id=${user_id}`;
+  }
   const text = await requestWrapper(token =>
-    fetch('/v0/books', {
+    fetch(url, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
