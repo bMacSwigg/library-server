@@ -13,6 +13,7 @@ from libraryserver.storage.testbase import BaseTestCase
 
 LOCAL_EMULATOR = "localhost:8287"
 
+# Start the emulator with `gcloud emulators firestore start --host-port=localhost:8287`
 # TODO: maybe start emulator here?
 os.environ["FIRESTORE_EMULATOR_HOST"] = LOCAL_EMULATOR
 cred = credentials.Certificate('run-web-efd188ab2632.json')
@@ -92,15 +93,16 @@ class TestBookService(BaseTestCase):
             self.books.getBook('isbn1')
 
     def test_listBooks(self):
-        b1 = self.db.putBook('isbn1', 1, 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
-        b2 = self.db.putBook('isbn2', 2, 'Looking For Alaska', 'John Green', 'Fiction', '2005', 'url')
+        b1 = self.db.putBook('isbn1', 1234, 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
+        b2 = self.db.putBook('isbn2', 1234, 'Looking For Alaska', 'John Green', 'Fiction', '2005', 'url')
+        self.db.putBook('isbn3', 5678, 'Foo', 'Bar', 'Fiction', '2005', 'url')
 
-        books = self.books.listBooks()
+        books = self.books.listBooks(1234)
         books.sort(key=lambda b: b.isbn)
 
         self.assertEqual(books[0].book_id, b1)
         self.assertEqual(books[0].isbn, 'isbn1')
-        self.assertEqual(books[0].owner_id, 1)
+        self.assertEqual(books[0].owner_id, 1234)
         self.assertEqual(books[0].title, 'Babel')
         self.assertEqual(books[0].author, 'R.F. Kuang')
         self.assertEqual(books[0].category, 'Fiction')
@@ -108,7 +110,7 @@ class TestBookService(BaseTestCase):
         self.assertEqual(books[0].thumbnail, 'url')
         self.assertEqual(books[1].book_id, b2)
         self.assertEqual(books[1].isbn, 'isbn2')
-        self.assertEqual(books[1].owner_id, 2)
+        self.assertEqual(books[1].owner_id, 1234)
         self.assertEqual(books[1].title, 'Looking For Alaska')
         self.assertEqual(books[1].author, 'John Green')
         self.assertEqual(books[1].category, 'Fiction')
@@ -123,7 +125,7 @@ class TestBookService(BaseTestCase):
         self.db.putLog(b2, Action.CREATE)
         self.db.putLog(b1, Action.CHECKOUT, 1234)
 
-        books = self.books.listBooks()
+        books = self.books.listBooks(1)
         books.sort(key=lambda b: b.isbn)
 
         self.assertEqual(books[0].isbn, 'isbn1')
@@ -137,9 +139,9 @@ class TestBookService(BaseTestCase):
 
     def test_listBooks_withSearch(self):
         self.db.putBook('isbn1', 1, 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
-        self.db.putBook('isbn2', 2, 'Looking For Alaska', 'John Green', 'Fiction', '2005', 'url')
+        self.db.putBook('isbn2', 1, 'Looking For Alaska', 'John Green', 'Fiction', '2005', 'url')
 
-        books = self.books.listBooks('looking')
+        books = self.books.listBooks(1, 'looking')
 
         self.assertEqual(len(books), 1)
         self.assertEqual(books[0].isbn, 'isbn2')
@@ -148,11 +150,11 @@ class TestBookService(BaseTestCase):
     def test_listBooksByStatus_checkedOut(self):
         self.db.putUser(1234, 'somebody', 'test@example.com')
         b_in = self.db.putBook('isbn-in', 1, '', '', '', '', '')
-        b_out = self.db.putBook('isbn-out', 2, '', '', '', '', '')
+        b_out = self.db.putBook('isbn-out', 1, '', '', '', '', '')
         self.db.putLog(b_in, Action.CREATE)
         self.db.putLog(b_out, Action.CHECKOUT, 1234)
 
-        books = self.books.listBooksByStatus(True)
+        books = self.books.listBooksByStatus(1, True)
 
         self.assertEqual(len(books), 1)
         self.assertEqual(books[0].isbn, 'isbn-out')
@@ -160,11 +162,11 @@ class TestBookService(BaseTestCase):
     def test_listBooksByStatus_checkedIn(self):
         self.db.putUser(1234, 'somebody', 'test@example.com')
         b_in = self.db.putBook('isbn-in', 1, '', '', '', '', '')
-        b_out = self.db.putBook('isbn-out', 2, '', '', '', '', '')
+        b_out = self.db.putBook('isbn-out', 1, '', '', '', '', '')
         self.db.putLog(b_in, Action.CREATE)
         self.db.putLog(b_out, Action.CHECKOUT, 1234)
 
-        books = self.books.listBooksByStatus(False)
+        books = self.books.listBooksByStatus(1, False)
 
         self.assertEqual(len(books), 1)
         self.assertEqual(books[0].isbn, 'isbn-in')
@@ -324,6 +326,14 @@ class TestUserService(BaseTestCase):
         self.assertEqual(res[1].user_id, 5678)
         self.assertEqual(res[1].name, 'Other')
         self.assertEqual(res[1].email, 'someone@example.com')
+
+    def test_updateUser(self):
+        self.db.putUser(1234, 'Brian', 'me@example.com')
+
+        self.users.updateUser(1234, 'Charlie')
+        res = self.users.getUser(1234)
+
+        self.assertEqual(res.name, 'Charlie')
 
 
 if __name__ == '__main__':

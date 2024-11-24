@@ -52,8 +52,8 @@ class LocalBookService(BookService):
         log_vals = self.db.getLatestLog(book_vals.id)
         return self._bookFromDocs(book_vals, log_vals)
 
-    def listBooks(self, search: str|None = None) -> list[Book]:
-        vals = self.db.listBooks(search)
+    def listBooks(self, user_id: int, search: str|None = None) -> list[Book]:
+        vals = self.db.listBooks(user_id, search)
         # It would probably be more efficient to do this with a JOIN in the DB
         # query. But this is simpler, and the scale of data is too small to matter.
         return [self._bookFromDocs(book_vals,
@@ -61,8 +61,8 @@ class LocalBookService(BookService):
                 for book_vals in vals]
 
     # Lists all checked-out or checked-in books
-    def listBooksByStatus(self, is_out) -> list[Book]:
-        allBooks = self.listBooks()
+    def listBooksByStatus(self, user_id: int, is_out: bool) -> list[Book]:
+        allBooks = self.listBooks(user_id)
         return [b for b in allBooks if b.is_out == is_out]
 
     def createBook(self, book: Book) -> str:
@@ -129,4 +129,7 @@ class LocalUserService(UserService):
     def listUsers(self) -> list[User]:
         vals = self.db.listUsers()
         return [User(int(v.id), v.get("name"), v.get("email")) for v in vals]
+
+    def updateUser(self, user_id: int, name: str):
+        self.db.setUserName(user_id, name)
 

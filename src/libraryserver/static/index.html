@@ -20,6 +20,7 @@
     </div>
     <div class="section" id="listbooks">
       <h1>List Books</h1>
+      User ID (optional): <input type="text" id="listbooks-userid"><br/>
       <button onclick="listBooks()">Run</button><br/>
       <h3>Output:</h3>
       <div id="listbooks-output"></div>
@@ -71,6 +72,14 @@
       <button onclick="listUserCheckoutHistory()">Run</button><br/>
       <h3>Output:</h3>
       <div id="userhistory-output"></div>
+    </div>
+    <div class="section" id="createbook">
+      <h1>Update User</h1>
+      User ID: <input type="text" id="updateuser-userid"><br/>
+      Name: <input type="text" id="updateuser-name"><br/>
+      <button onclick="updateUser()">Run</button>
+      <h3>Output:</h3>
+      <div id="updateuser-output"></div>
     </div>
     <div class="section" id="lookup">
       <h1>Lookup Book</h1>

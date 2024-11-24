@@ -35,8 +35,12 @@ class Database:
         })
         return book.id
 
-    def listBooks(self, search: str|None = None) -> list[DocumentSnapshot]:
-        books = self.books_ref.get()
+    def listBooks(self, user_id: int, search: str|None = None) -> list[DocumentSnapshot]:
+        books = (
+            self.books_ref
+            .where(filter=FieldFilter("owner_id", "==", user_id))
+            .get()
+        )
         # have to do filtering here, because Firestore doesn't support search
         if search:
             books = [book for book in books if self._matches(book, search)]
@@ -98,6 +102,10 @@ class Database:
 
     def listUsers(self) -> list[DocumentSnapshot]:
         return self.users_ref.get()
+
+    def setUserName(self, user_id: int, name: str):
+        user = self.users_ref.document(str(user_id))
+        user.update({"name": name})
 
     def setUserTokenUid(self, user_id: int, token_uid: str):
         user = self.users_ref.document(str(user_id))

@@ -11,6 +11,7 @@ from libraryserver.storage.testbase import BaseTestCase
 
 LOCAL_EMULATOR = "localhost:8287"
 
+# Start the emulator with `gcloud emulators firestore start --host-port=localhost:8287`
 # TODO: maybe start emulator here?
 os.environ["FIRESTORE_EMULATOR_HOST"] = LOCAL_EMULATOR
 cred = credentials.Certificate('run-web-efd188ab2632.json')
@@ -46,9 +47,10 @@ class TestDatabase(BaseTestCase):
 
     def test_book_list(self):
         self.db.putBook('isbn1', 1, 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
-        self.db.putBook('isbn2', 2, 'Looking for Alaska', 'John Green', 'Fiction', '2005', 'url')
+        self.db.putBook('isbn2', 1, 'Looking for Alaska', 'John Green', 'Fiction', '2005', 'url')
+        self.db.putBook('isbn3', 2, 'Foo', 'Bar', 'Fiction', '1992', 'url')
 
-        res = self.db.listBooks()
+        res = self.db.listBooks(1)
 
         self.assertEqual(len(res), 2)
         self.assertQueryDataMatches(
@@ -61,7 +63,7 @@ class TestDatabase(BaseTestCase):
               "year": "2022",
               "img": "url"},
              {"isbn": "isbn2",
-              "owner_id": 2,
+              "owner_id": 1,
               "title": "Looking for Alaska",
               "author": "John Green",
               "category": "Fiction",
@@ -70,7 +72,7 @@ class TestDatabase(BaseTestCase):
 
     def test_book_listWithSearch(self):
         self.db.putBook('isbn1', 1, 'Babel', 'R.F. Kuang', 'Fiction', '2022', 'url')
-        self.db.putBook('isbn2', 2, 'Looking for Alaska', 'John Green', 'Fiction', '2005', 'url')
+        self.db.putBook('isbn2', 1, 'Looking for Alaska', 'John Green', 'Fiction', '2005', 'url')
 
         babel_dict = {
             "isbn": "isbn1",
@@ -82,16 +84,16 @@ class TestDatabase(BaseTestCase):
             "img": "url"}
         lfa_dict = {
             "isbn": "isbn2",
-            "owner_id": 2,
+            "owner_id": 1,
             "title": "Looking for Alaska",
             "author": "John Green",
             "category": "Fiction",
             "year": "2005",
             "img": "url"}
-        self.assertQueryDataMatches(self.db.listBooks('for'), [lfa_dict])
-        self.assertQueryDataMatches(self.db.listBooks('Kuang'), [babel_dict])
+        self.assertQueryDataMatches(self.db.listBooks(1, 'for'), [lfa_dict])
+        self.assertQueryDataMatches(self.db.listBooks(1, 'Kuang'), [babel_dict])
         self.assertQueryDataMatches(
-            self.db.listBooks('a'),
+            self.db.listBooks(1, 'a'),
             [babel_dict, lfa_dict])
 
     def test_logs_putAndGet(self):
@@ -182,6 +184,15 @@ class TestDatabase(BaseTestCase):
                "email": 'john@example.com'},
               {"name": 'Jane Doe',
                "email": 'jane@example.com'}])
+
+    def test_user_updateName(self):
+        self.db.putUser(1234, 'Adam', 'adam@example.com')
+
+        self.db.setUserName(1234, 'Bob')
+        res = self.db.getUser(1234)
+
+        self.assertEqual(res.get('name'), 'Bob')
+        self.assertEqual(res.get('email'), 'adam@example.com')
 
     def test_user_tokenUidMatch(self):
         self.db.putUser(1234, 'John Doe', 'john@example.com')
