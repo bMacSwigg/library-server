@@ -7,7 +7,7 @@ import logging
 import os
 
 from libraryserver.api.errors import InvalidStateException, NotFoundException
-from libraryserver.api.models import Book
+from libraryserver.api.models import Book, User
 from libraryserver.auth import user_authenticated
 from libraryserver.config import APP_CONFIG
 from libraryserver.keys.keymanager import KeyManager
@@ -42,7 +42,8 @@ def check():
         check() : Validate that the caller is logged in and can access the API.
         Returns the user object for the caller.
     """
-    return jsonify(request.user), 200
+    user = User(request.user.id, request.user.get("name"), request.user.get("email"))
+    return jsonify(user), 200
 
 # Books API
 @app.route('/v0/books/<book_id>', methods=['GET'])
