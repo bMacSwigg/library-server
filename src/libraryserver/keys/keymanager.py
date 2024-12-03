@@ -34,7 +34,7 @@ class KeyManager:
             return None
         else:
             key = self.secret_client.access_secret_version(
-                request={"name": (KEY_TEMPLATE % name)}
+                request={"name": (self.KEY_TEMPLATE % name)}
             )
             return key.payload.data.decode("UTF-8")
     
