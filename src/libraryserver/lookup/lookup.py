@@ -1,6 +1,7 @@
 import json
 from urllib.request import urlopen
 
+from libraryserver.api.errors import NotFoundException
 from libraryserver.api.models import Book
 from libraryserver.keys.keymanager import KeyManager
 
@@ -16,6 +17,8 @@ class LookupService:
     def lookupIsbn(self, isbn: str) -> Book:
         url = self.GOOGLE_BOOKS_ENDPOINT % (isbn, self.api_key)
         res = json.load(urlopen(url))
+        if not 'items' in res or res['totalItems'] == 0:
+            raise NotFoundException('No books found with ISBN %s' % isbn)
         vals = res['items'][0]['volumeInfo']
         title = vals['title'] if 'title' in vals else ''
         authors = vals['authors'] if 'authors' in vals else []

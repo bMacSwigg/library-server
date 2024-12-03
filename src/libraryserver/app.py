@@ -216,7 +216,10 @@ def lookupBookDetails(isbn):
         lookupBookDetails() : Fetch details on this book from Google Books API
     """
     lookup = LookupService(KeyManager())
-    book = lookup.lookupIsbn(isbn)
+    try:
+        book = lookup.lookupIsbn(isbn)
+    except NotFoundException:
+        return "No books found with ISBN %s" % isbn, 404
     return jsonify(asdict(book)), 200
 
 
