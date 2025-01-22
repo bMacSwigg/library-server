@@ -6,6 +6,7 @@ from libraryserver.api.models import Book, User, Action, LogEntry
 from libraryserver.api.service import BookService, UserService
 from libraryserver.config import APP_CONFIG
 from libraryserver.constants import MIN_USER_ID, MAX_USER_ID
+from libraryserver.keys.keymanager import KeyManager
 from libraryserver.notifs.mailgun_client import Email
 from libraryserver.storage.firestore_client import Database
 
@@ -14,7 +15,7 @@ class LocalBookService(BookService):
 
     def __init__(self, db: Database):
         self.db = db
-        self.email = Email()
+        self.email = Email(KeyManager())
 
     def _parseLogs(self, log_vals: DocumentSnapshot) -> LogEntry:
         user_id = log_vals.get("user_id") or None
