@@ -24,15 +24,6 @@ class TestConfig(unittest.TestCase):
         ac = AppConfig(override_prod=True)
         self.assertIsNone(ac.firestore_apikey_file())
 
-    def test_mailgunkey_dev(self):
-        ac = AppConfig()
-        expected_subpath = os.path.normpath('library-server/src/libraryserver/notifs/mailgun.secret')
-        self.assertIn(expected_subpath, ac.mailgun_apikey_file())
-
-    def test_mailgunkey_prod(self):
-        ac = AppConfig(override_prod=True)
-        self.assertIsNone(ac.mailgun_apikey_file())
-
     def test_logfile_dev(self):
         ac = AppConfig()
         expected_subpath = os.path.normpath('library-server/src/libraryserver/library.log')

@@ -38,12 +38,6 @@ class AppConfig:
         paths = self.config['FirestoreApiKeyPath'].split(',')
         return os.path.join(self.root, *paths)
 
-    def mailgun_apikey_file(self):
-        if not 'MailgunApiKeyPath' in self.config:
-            return None
-        paths = self.config['MailgunApiKeyPath'].split(',')
-        return os.path.join(self.root, *paths)
-
     def log_file(self):
         paths = self.config['LogPath'].split(',')
         return os.path.join(self.root, *paths)
