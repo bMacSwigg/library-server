@@ -97,7 +97,7 @@ class LocalBookService(BookService):
         user_vals = self.db.getUser(user_id)
         user = User(user_id, user_vals.get("name"), user_vals.get("email"))
         ret_time = self.db.getLatestLog(book_id).get("timestamp")
-        self.email.send_return_message(book, user, ret_time)
+        self.email.send_return_message(book, user, str(ret_time))
 
     def listBookCheckoutHistory(self, book_id: str) -> list[LogEntry]:
         logs = self.db.listLogsByBook(book_id)
